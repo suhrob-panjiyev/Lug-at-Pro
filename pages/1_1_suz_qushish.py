@@ -15,6 +15,7 @@ render_top_nav()
 
 st.markdown("### ➕ So‘z qo‘shish")
 
+# --- Input (dynamic key) ---
 typed = st.text_input(
     "English so‘zni yozing",
     key=f"en_input_widget_{st.session_state.en_nonce}",
@@ -28,8 +29,10 @@ if typed != st.session_state.en_input:
 en_word = (st.session_state.en_input or "").strip()
 en_key = norm_en(en_word)
 
+# --- Suggestions ---
 sug = suggestions(en_word, st.session_state.english_list_csv, limit=16)
 
+# ✅ Faqat shu qolsin (selectbox)
 if en_word and sug:
     pick = st.selectbox(
         "Tavsiya tanlang (ixtiyoriy):",
@@ -42,32 +45,30 @@ if en_word and sug:
         st.session_state.en_nonce += 1
         st.rerun()
 
-if en_word:
-    st.markdown("<div class='sug-title'><b>Tavsiyalar:</b></div>", unsafe_allow_html=True)
-    if not sug:
-        st.caption("Hech narsa topilmadi. Yozuvni tekshiring.")
-    else:
-        cols = st.columns(8)
-        for i, w in enumerate(sug):
-            with cols[i % 8]:
-                if st.button(w, key=f"sug_{w}_{i}", use_container_width=True):
-                    st.session_state.en_input = w
-                    st.session_state.en_nonce += 1
-                    st.rerun()
-
 st.divider()
 
+# ---------------------------
+# CSV’da bor bo‘lsa
+# ---------------------------
 if en_key and en_key in st.session_state.base_map:
     item = st.session_state.base_map[en_key]
     st.success("Topildi ✅ (CSV bazadan)")
 
     existing = item.get("uz_list") or []
-    selected = st.multiselect("Tarjimalarni tanlang:", existing, default=existing[:1] if existing else [])
+    selected = st.multiselect(
+        "Tarjimalarni tanlang:",
+        existing,
+        default=existing[:1] if existing else []
+    )
 
     if st.button("💾 Saqlash", type="primary", use_container_width=True, disabled=(len(selected) == 0)):
         st.session_state.user_map[en_key] = {"en": item["en"], "uz_list": selected}
         save_user_words(st.session_state.user_map)
         st.success("Saqlandi ✅")
+
+# ---------------------------
+# CSV’da yo‘q bo‘lsa
+# ---------------------------
 else:
     st.info("Bu so‘z CSV bazada yo‘q. Istasangiz avtomatik tarjima qilib saqlaysiz.")
 
@@ -96,13 +97,18 @@ else:
         selected = [x.strip() for x in uz_text.splitlines() if x.strip()]
     else:
         default_pick = st.session_state.last_translations[:1] if st.session_state.last_translations else []
-        selected = st.multiselect("Topilgan tarjima(lar):", st.session_state.last_translations, default=default_pick)
+        selected = st.multiselect(
+            "Topilgan tarjima(lar):",
+            st.session_state.last_translations,
+            default=default_pick
+        )
 
     if st.button("💾 Saqlash", type="primary", use_container_width=True, disabled=(not en_word or len(selected) == 0)):
         st.session_state.user_map[en_key] = {"en": en_word, "uz_list": selected}
         save_user_words(st.session_state.user_map)
         st.success("Saqlandi ✅")
 
+# --- Footer metrics ---
 k1, k2 = st.columns(2)
 k1.metric("User so‘zlari", len(st.session_state.user_map))
 k2.metric("CSV so‘zlari", len(st.session_state.base_map))
