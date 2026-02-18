@@ -1,4 +1,6 @@
 import streamlit as st
+from streamlit_searchbox import st_searchbox
+
 from pages.student_core import (
     render_sidebar, ensure_state,
     inject_student_css, render_hero, render_top_nav,
@@ -15,35 +17,63 @@ render_top_nav()
 
 st.markdown("### ➕ So‘z qo‘shish")
 
-# --- Input (dynamic key) ---
-typed = st.text_input(
-    "English so‘zni yozing",
-    key=f"en_input_widget_{st.session_state.en_nonce}",
-    value=st.session_state.en_input,
-    placeholder="car, example, apple ..."
+# ---- state init ----
+if "en_input" not in st.session_state:
+    st.session_state.en_input = ""
+if "last_translations" not in st.session_state:
+    st.session_state.last_translations = []
+
+# ---------------------------
+# 1) SINGLE INPUT: live searchbox
+# ---------------------------
+def search_fn(q: str):
+    q = (q or "").strip()
+    if not q:
+        return []
+
+    # bazadan tavsiyalar
+    sug = suggestions(q, st.session_state.english_list_csv, limit=16)
+
+    # ✅ user typed so‘z ham birinchi bo‘lsin (car ham chiqadi)
+    if q and all(q.lower() != s.lower() for s in sug):
+        sug = [q] + sug
+    else:
+        # agar sug ichida bo‘lsa ham, q ni 1-chi qilish (car birinchi)
+        # (case-insensitive)
+        q_low = q.lower()
+        sug_sorted = [q]
+        for s in sug:
+            if s.lower() != q_low:
+                sug_sorted.append(s)
+        sug = sug_sorted
+
+    # dedupe
+    seen = set()
+    out = []
+    for w in sug:
+        lw = w.lower()
+        if lw not in seen:
+            seen.add(lw)
+            out.append(w)
+
+    return out[:16]
+
+
+picked = st_searchbox(
+    search_fn,
+    key="en_live",
+    placeholder="car, app, apple ...",
+    label="English so‘zni yozing"
 )
 
-if typed != st.session_state.en_input:
-    st.session_state.en_input = typed
+# picked bo‘lsa: user tanladi yoki Enter bosdi (q ro‘yxatda 1-chi bo‘lgani uchun q qaytadi)
+en_word = (picked or "").strip()
 
-en_word = (st.session_state.en_input or "").strip()
+# statega yozib qo‘yamiz (keyingi bo‘limlar uchun)
+if en_word:
+    st.session_state.en_input = en_word
+
 en_key = norm_en(en_word)
-
-# --- Suggestions ---
-sug = suggestions(en_word, st.session_state.english_list_csv, limit=16)
-
-# ✅ Faqat shu qolsin (selectbox)
-if en_word and sug:
-    pick = st.selectbox(
-        "Tavsiya tanlang (ixtiyoriy):",
-        options=["—"] + sug,
-        index=0,
-        help="Yozishni boshlang → tavsiyalar chiqadi → bittasini tanlang."
-    )
-    if pick != "—":
-        st.session_state.en_input = pick
-        st.session_state.en_nonce += 1
-        st.rerun()
 
 st.divider()
 
@@ -108,7 +138,9 @@ else:
         save_user_words(st.session_state.user_map)
         st.success("Saqlandi ✅")
 
-# --- Footer metrics ---
+# ---------------------------
+# Footer
+# ---------------------------
 k1, k2 = st.columns(2)
 k1.metric("User so‘zlari", len(st.session_state.user_map))
 k2.metric("CSV so‘zlari", len(st.session_state.base_map))
