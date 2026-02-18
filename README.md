@@ -88,7 +88,7 @@ Deploy qilingan versiyada kalitlar Streamlit Cloud Secrets orqali saqlanadi.
 ## 👨‍💻 Muallif
 
 Suhrob Panjiyev  
-Telegram: @Suhrobchik_05  
+Telegram: @atlet_bro  
 GitHub: https://github.com/suhrob-panjiyev
 
 ---
