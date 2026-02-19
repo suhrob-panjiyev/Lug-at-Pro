@@ -422,37 +422,40 @@ import streamlit as st
 
 def render_top_nav(active: str = "add", page_key: str = "student"):
     """
-    page_key: har sahifa uchun noyob bo‘lishi kerak.
-    Masalan: "add", "test", "stats"
+    active: "add" | "test" | "stats"
+    page_key: har bir page uchun unik prefix (duplicate key muammosini yechadi)
     """
+
+    # Unik keylar
+    k_add = f"{page_key}_nav_add"
+    k_test = f"{page_key}_nav_test"
+    k_stats = f"{page_key}_nav_stats"
 
     n1, n2, n3 = st.columns(3)
 
     with n1:
         if st.button(
             "➕ So‘z qo‘shish",
+            key=k_add,
             use_container_width=True,
-            type="primary" if active == "add" else "secondary",
-            key=f"{page_key}_nav_add",
+            type="primary" if active == "add" else "secondary"
         ):
             st.switch_page("pages/1_1_suz_qushish.py")
 
     with n2:
         if st.button(
             "📝 Test",
+            key=k_test,
             use_container_width=True,
-            type="primary" if active == "test" else "secondary",
-            key=f"{page_key}_nav_test",
+            type="primary" if active == "test" else "secondary"
         ):
             st.switch_page("pages/1_2_test.py")
 
     with n3:
         if st.button(
             "📊 Statistika",
+            key=k_stats,
             use_container_width=True,
-            type="primary" if active == "stats" else "secondary",
-            key=f"{page_key}_nav_stats",
+            type="primary" if active == "stats" else "secondary"
         ):
             st.switch_page("pages/1_3_statistika.py")
-
-    st.write("")
