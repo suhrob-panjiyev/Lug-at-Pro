@@ -10,10 +10,10 @@ with st.sidebar:
         st.switch_page("pages/1_Student.py")
     if st.button("👨‍🏫 Teacher", use_container_width=True):
         st.switch_page("pages/2_Teacher.py")
-    if st.button("👤 Men haqimda", use_container_width=True):
+    if st.button("👤 Sayt haqida", use_container_width=True):
         st.switch_page("pages/3_About.py")
 
-st.title("👤 Men haqimda")
+st.title("👤 Sayt haqida")
 
 st.markdown(
     """
