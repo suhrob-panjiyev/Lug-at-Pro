@@ -37,8 +37,20 @@ st.markdown(
         background: linear-gradient(135deg, rgba(80,120,255,0.18), rgba(0,0,0,0));
         border: 1px solid rgba(255,255,255,0.08);
       }
-      .bigtitle { font-size: 44px; font-weight: 800; line-height: 1.1; margin-bottom: 10px; }
-      .subtitle { font-size: 18px; opacity: 0.9; margin-bottom: 18px; }
+
+      .bigtitle { 
+        font-size: 44px; 
+        font-weight: 800; 
+        line-height: 1.1; 
+        margin-bottom: 10px; 
+      }
+
+      .subtitle { 
+        font-size: 18px; 
+        opacity: 0.9; 
+        margin-bottom: 18px; 
+      }
+
       .pill {
         display: inline-block;
         padding: 6px 10px;
@@ -46,8 +58,10 @@ st.markdown(
         border: 1px solid rgba(255,255,255,0.12);
         opacity: 0.9;
         margin-right: 8px;
+        margin-bottom: 8px;
         font-size: 13px;
       }
+
       .card {
         padding: 18px;
         border-radius: 16px;
@@ -55,10 +69,31 @@ st.markdown(
         background: rgba(255,255,255,0.03);
         height: 100%;
       }
+
+      /* 📱 Telefon uchun */
+      @media (max-width: 768px) {
+        .hero {
+          padding: 18px;
+        }
+
+        .bigtitle {
+          font-size: 28px;
+        }
+
+        .subtitle {
+          font-size: 15px;
+        }
+
+        .pill {
+          font-size: 12px;
+          padding: 5px 8px;
+        }
+      }
     </style>
     """,
     unsafe_allow_html=True
 )
+
 
 st.markdown(
     """
