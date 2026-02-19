@@ -18,7 +18,9 @@ st.title("👤 Sayt haqida")
 st.markdown(
     """
 **Assalomu alaykum!** Men Suhrob.  
-Bu loyiha — ingliz tilidagi lug‘atlarni yodlash va test qilishni osonlashtirish uchun yaratilgan MVP.
+Lug‘at Pro — ingliz tilidagi so‘zlarni samarali yodlash va test qilishni osonlashtirish uchun yaratilgan loyiha. Platforma foydalanuvchilarga lug‘at qo‘shish, darajalar bo‘yicha mashq qilish va natijalarni kuzatish imkonini beradi.
+
+Maqsad — o‘quvchilar va o‘quv markazlari uchun qulay, aqlli va rivojlantiriladigan ta’lim tizimini yaratish.
 
 ### 📌 Kontaktlar
 """
