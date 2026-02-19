@@ -38,7 +38,7 @@ with col3:
     st.link_button("📸 Instagram", "https://instagram.com/suhrob_panjiyev_", use_container_width=True)
 
 with col4:
-    st.link_button("💻 GitHub", "https://github.com/suhrob_panjiyev", use_container_width=True)
+    st.link_button("💻 GitHub", "https://github.com/suhrob-panjiyev", use_container_width=True)
 
 st.markdown(
     """
