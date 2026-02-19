@@ -1,6 +1,6 @@
 import streamlit as st
 
-st.set_page_config(page_title="Men haqimda", page_icon="👤", layout="centered")
+st.set_page_config(page_title="Sayt haqida", page_icon="👤", layout="centered")
 
 with st.sidebar:
     st.markdown("## 📘 Lug'at Pro")
