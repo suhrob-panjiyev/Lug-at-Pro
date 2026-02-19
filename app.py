@@ -20,7 +20,7 @@ with st.sidebar:
     if st.button("👨‍🏫 Teacher", use_container_width=True):
         st.switch_page("pages/2_Teacher.py")
 
-    if st.button("👤 Men haqimda", use_container_width=True):
+    if st.button("👤 Sayt haqida", use_container_width=True):
         st.switch_page("pages/3_About.py")
 
     st.divider()
@@ -150,7 +150,7 @@ with colC:
     st.markdown(
         """
         <div class="card">
-          <h3>👤 Men haqimda</h3>
+          <h3>👤 Sayt haqida</h3>
           <p>
             Loyihani kim qilgan? Kontaktlar, GitHub, Telegram va boshqalar.
           </p>
