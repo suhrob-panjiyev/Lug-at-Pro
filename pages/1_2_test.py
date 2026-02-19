@@ -14,7 +14,9 @@ render_sidebar(active="student")
 ensure_state()
 inject_student_css()
 render_hero()
-render_top_nav()
+render_top_nav(active="test", page_key="test")
+
+
 
 st.markdown("### 📝 Test")
 
@@ -106,39 +108,61 @@ elif st.session_state.quiz_page == "run":
         st.rerun()
 
     q_id = f"{mode}:{st.session_state.get('csv_test_id')}:{idx}"
+
+    # savolni faqat bir marta build qilish
     if st.session_state.current_q_id != q_id or st.session_state.current_q is None:
         st.session_state.current_q_id = q_id
         current_key = keys[idx]
         st.session_state.current_q = build_question_from_map(source_map, current_key)
-        st.session_state.q_choice = None
 
     q = st.session_state.current_q
-    st.info(("🧑‍💻 Mening so‘zlarim" if mode == "manual" else f"📚 CSV Test-{st.session_state.csv_test_id}") + f" • {idx+1}/{total_q}")
+    st.info(
+        ("🧑‍💻 Mening so‘zlarim" if mode == "manual" else f"📚 CSV Test-{st.session_state.csv_test_id}")
+        + f" • {idx+1}/{total_q}"
+    )
 
     st.markdown(f"## **{q['en']}**")
-    st.session_state.q_choice = st.radio("Tarjimani tanlang:", q["options"], index=None, key="q_choice_widget")
-    choice = st.session_state.q_choice
+
+    # ✅ har savol uchun radio key unik bo‘ladi
+    radio_key = f"q_choice_{q_id}"
+
+    st.radio(
+        "Tarjimani tanlang:",
+        q["options"],
+        index=None,
+        key=radio_key
+    )
+
+    choice = st.session_state.get(radio_key)
 
     a, b, c = st.columns([1.2, 1, 1.2])
     with a:
         if st.button("✅ Yuborish", type="primary", use_container_width=True, disabled=(choice is None)):
             ok = (norm_uz(choice) == norm_uz(q["correct"]))
+
             if ok:
                 st.session_state.quiz_score += 1
                 st.success("To‘g‘ri ✅")
             else:
                 st.error(f"Noto‘g‘ri ❌  To‘g‘risi: **{q['correct']}**")
 
-            st.session_state.quiz_answers.append({"en": q["en"], "your": choice, "correct": q["correct"], "ok": ok})
-            st.session_state.quiz_index += 1
+            st.session_state.quiz_answers.append({
+                "en": q["en"],
+                "your": choice,
+                "correct": q["correct"],
+                "ok": ok
+            })
 
+            # ✅ shu savolning tanlovini tozalaymiz
+            st.session_state.pop(radio_key, None)
+
+            st.session_state.quiz_index += 1
             st.session_state.current_q = None
             st.session_state.current_q_id = None
-            st.session_state.q_choice = None
-            st.session_state.pop("q_choice_widget", None)
 
             if st.session_state.quiz_index >= total_q:
                 st.session_state.quiz_page = "result"
+
             st.rerun()
 
     with b:
@@ -150,6 +174,7 @@ elif st.session_state.quiz_page == "run":
             st.rerun()
 
     st.progress(idx / total_q)
+
 
 elif st.session_state.quiz_page == "result":
     mode = st.session_state.quiz_mode

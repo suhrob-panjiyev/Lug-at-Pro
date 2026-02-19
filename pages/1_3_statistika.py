@@ -10,7 +10,9 @@ render_sidebar(active="student")
 ensure_state()
 inject_student_css()
 render_hero()
-render_top_nav()
+render_top_nav(active="stats", page_key="stats")
+
+
 
 st.markdown("### 📊 Statistika")
 

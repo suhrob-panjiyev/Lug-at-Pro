@@ -418,21 +418,41 @@ def render_hero():
     )
     st.write("")
 
-def render_top_nav():
+import streamlit as st
+
+def render_top_nav(active: str = "add", page_key: str = "student"):
+    """
+    page_key: har sahifa uchun noyob bo‘lishi kerak.
+    Masalan: "add", "test", "stats"
+    """
+
     n1, n2, n3 = st.columns(3)
+
     with n1:
-        if st.button("➕ So‘z qo‘shish", use_container_width=True,
-                     type="primary" if st.session_state.student_section == "add" else "secondary"):
-            st.session_state.student_section = "add"
-            st.rerun()
+        if st.button(
+            "➕ So‘z qo‘shish",
+            use_container_width=True,
+            type="primary" if active == "add" else "secondary",
+            key=f"{page_key}_nav_add",
+        ):
+            st.switch_page("pages/1_1_suz_qushish.py")
+
     with n2:
-        if st.button("📝 Test", use_container_width=True,
-                     type="primary" if st.session_state.student_section == "test" else "secondary"):
-            st.session_state.student_section = "test"
-            st.rerun()
+        if st.button(
+            "📝 Test",
+            use_container_width=True,
+            type="primary" if active == "test" else "secondary",
+            key=f"{page_key}_nav_test",
+        ):
+            st.switch_page("pages/1_2_test.py")
+
     with n3:
-        if st.button("📊 Statistika", use_container_width=True,
-                     type="primary" if st.session_state.student_section == "stats" else "secondary"):
-            st.session_state.student_section = "stats"
-            st.rerun()
+        if st.button(
+            "📊 Statistika",
+            use_container_width=True,
+            type="primary" if active == "stats" else "secondary",
+            key=f"{page_key}_nav_stats",
+        ):
+            st.switch_page("pages/1_3_statistika.py")
+
     st.write("")
