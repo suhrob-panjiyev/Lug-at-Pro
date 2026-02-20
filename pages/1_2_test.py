@@ -98,7 +98,11 @@ elif st.session_state.quiz_page == "csv_list":
 
 elif st.session_state.quiz_page == "run":
     mode = st.session_state.quiz_mode
-    source_map = st.session_state.user_map if mode == "manual" else st.session_state.base_map
+    if mode == "manual":
+        source_map = st.session_state.user_map
+    else:
+        # csv ham, level ham base_map’dan foydalanadi
+        source_map = st.session_state.base_map
     keys = st.session_state.quiz_keys
     idx = st.session_state.quiz_index
     total_q = len(keys)
@@ -116,10 +120,14 @@ elif st.session_state.quiz_page == "run":
         st.session_state.current_q = build_question_from_map(source_map, current_key)
 
     q = st.session_state.current_q
-    st.info(
-        ("🧑‍💻 Mening so‘zlarim" if mode == "manual" else f"📚 CSV Test-{st.session_state.csv_test_id}")
-        + f" • {idx+1}/{total_q}"
-    )
+    if mode == "manual":
+        title = "🧑‍💻 Mening so‘zlarim"
+    elif mode == "level":
+        title = "📚 Level testi"
+    else:
+        title = f"📚 CSV Test-{st.session_state.csv_test_id}"
+
+    st.info(title + f" • {idx+1}/{total_q}")
 
     st.markdown(f"## **{q['en']}**")
 

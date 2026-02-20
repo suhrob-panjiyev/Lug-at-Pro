@@ -122,3 +122,7 @@ urllib3==2.6.3
 watchdog==6.0.0
 wcwidth==0.6.0
 websockets==15.0.1
+scikit-learn
+joblib
+pandas
+streamlit

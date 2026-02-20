@@ -422,26 +422,50 @@ import streamlit as st
 
 def render_top_nav(active: str = "add", page_key: str = "student", **kwargs):
     """
-    active: "add" | "test" | "stats"
-    page_key: har bir page uchun unik prefix
+    active: "add" | "test" | "stats" | "levels"
+    page_key: har bir page uchun unik prefix (duplicate key muammosini yechadi)
     """
+
+    # Unik keylar
     k_add = f"{page_key}_nav_add"
     k_test = f"{page_key}_nav_test"
     k_stats = f"{page_key}_nav_stats"
+    k_levels = f"{page_key}_nav_levels"
 
-    n1, n2, n3 = st.columns(3)
+    n1, n2, n3, n4 = st.columns(4)
 
     with n1:
-        if st.button("➕ So‘z qo‘shish", key=k_add, use_container_width=True,
-                     type="primary" if active == "add" else "secondary"):
+        if st.button(
+            "➕ So‘z qo‘shish",
+            key=k_add,
+            use_container_width=True,
+            type="primary" if active == "add" else "secondary"
+        ):
             st.switch_page("pages/1_1_suz_qushish.py")
 
     with n2:
-        if st.button("📝 Test", key=k_test, use_container_width=True,
-                     type="primary" if active == "test" else "secondary"):
+        if st.button(
+            "📝 Test",
+            key=k_test,
+            use_container_width=True,
+            type="primary" if active == "test" else "secondary"
+        ):
             st.switch_page("pages/1_2_test.py")
 
     with n3:
-        if st.button("📊 Statistika", key=k_stats, use_container_width=True,
-                     type="primary" if active == "stats" else "secondary"):
+        if st.button(
+            "📊 Statistika",
+            key=k_stats,
+            use_container_width=True,
+            type="primary" if active == "stats" else "secondary"
+        ):
             st.switch_page("pages/1_3_statistika.py")
+
+    with n4:
+        if st.button(
+            "📚 Levels",
+            key=k_levels,
+            use_container_width=True,
+            type="primary" if active == "levels" else "secondary"
+        ):
+            st.switch_page("pages/1_4_levels.py")
