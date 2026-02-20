@@ -1,6 +1,11 @@
 import streamlit as st
 from streamlit_searchbox import st_searchbox
 
+# ✅ NEW imports
+from gtts import gTTS
+import io
+import base64
+
 from pages.student_core import (
     render_sidebar, ensure_state,
     inject_student_css, render_hero, render_top_nav,
@@ -15,8 +20,6 @@ inject_student_css()
 render_hero()
 render_top_nav(active="add", page_key="add")
 
-
-
 st.markdown("### ➕ So‘z qo‘shish")
 
 # ---- state init ----
@@ -24,6 +27,25 @@ if "en_input" not in st.session_state:
     st.session_state.en_input = ""
 if "last_translations" not in st.session_state:
     st.session_state.last_translations = []
+
+# ✅ NEW state (pronunciation)
+if "pron_word" not in st.session_state:
+    st.session_state.pron_word = ""
+if "pron_play" not in st.session_state:
+    st.session_state.pron_play = False
+
+
+# ✅ NEW: cached TTS bytes
+@st.cache_data(show_spinner=False)
+def tts_mp3_bytes(word: str) -> bytes:
+    word = (word or "").strip()
+    if not word:
+        return b""
+    tts = gTTS(text=word, lang="en")
+    fp = io.BytesIO()
+    tts.write_to_fp(fp)
+    return fp.getvalue()
+
 
 # ---------------------------
 # 1) SINGLE INPUT: live searchbox
@@ -36,12 +58,10 @@ def search_fn(q: str):
     # bazadan tavsiyalar
     sug = suggestions(q, st.session_state.english_list_csv, limit=16)
 
-    # ✅ user typed so‘z ham birinchi bo‘lsin (car ham chiqadi)
+    # ✅ user typed so‘z ham birinchi bo‘lsin
     if q and all(q.lower() != s.lower() for s in sug):
         sug = [q] + sug
     else:
-        # agar sug ichida bo‘lsa ham, q ni 1-chi qilish (car birinchi)
-        # (case-insensitive)
         q_low = q.lower()
         sug_sorted = [q]
         for s in sug:
@@ -61,15 +81,31 @@ def search_fn(q: str):
     return out[:16]
 
 
-picked = st_searchbox(
-    search_fn,
-    key="en_live",
-    placeholder="car, app, apple ...",
-    label="English so‘zni yozing"
-)
+# ✅ Input + 🔊 button yonma-yon
+col_inp, col_audio = st.columns([8, 1.3], vertical_alignment="bottom")
 
-# picked bo‘lsa: user tanladi yoki Enter bosdi (q ro‘yxatda 1-chi bo‘lgani uchun q qaytadi)
+with col_inp:
+    picked = st_searchbox(
+        search_fn,
+        key="en_live",
+        placeholder="car, app, apple ...",
+        label="English so‘zni yozing"
+    )
+
 en_word = (picked or "").strip()
+
+with col_audio:
+    # 🔊 tugma faqat so‘z bor bo‘lsa aktiv
+    play_click = st.button(
+        "🔊",
+        help="Talaffuzni eshitish",
+        use_container_width=True,
+        disabled=not bool(en_word)
+    )
+    if play_click and en_word:
+        st.session_state.pron_word = en_word
+        st.session_state.pron_play = True
+
 
 # statega yozib qo‘yamiz (keyingi bo‘limlar uchun)
 if en_word:
@@ -77,7 +113,31 @@ if en_word:
 
 en_key = norm_en(en_word)
 
+
+# ✅ Audio chiqishi (player ko‘rinmaydi)
+if st.session_state.pron_play and st.session_state.pron_word == en_word:
+    try:
+        audio_bytes = tts_mp3_bytes(en_word)
+        if audio_bytes:
+            b64 = base64.b64encode(audio_bytes).decode()
+            st.markdown(
+                f"""
+                <audio autoplay>
+                    <source src="data:audio/mp3;base64,{b64}" type="audio/mp3">
+                </audio>
+                """,
+                unsafe_allow_html=True
+            )
+
+            # ✅ MUHIM: bir marta chalinsa flagni o‘chir
+            st.session_state.pron_play = False
+
+    except Exception as e:
+        st.error(f"Talaffuz xatosi: {e}")
+        st.session_state.pron_play = False
+
 st.divider()
+
 
 # ---------------------------
 # CSV’da bor bo‘lsa
