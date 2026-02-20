@@ -418,7 +418,6 @@ def render_hero():
     )
     st.write("")
 
-import streamlit as st
 
 def render_top_nav(active: str = "add", page_key: str = "student", **kwargs):
     """
