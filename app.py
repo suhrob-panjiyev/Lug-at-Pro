@@ -108,14 +108,6 @@ if st.session_state.user:
     u = st.session_state.user
     st.success(f"✅ Tizimga kirdingiz.")
 
-    c1, c2 = st.columns([1, 1])
-    with c1:
-        if st.button("🎓 Student bo‘limiga o‘tish", type="primary", use_container_width=True):
-            st.switch_page("pages/1_Student.py")
-    with c2:
-        if st.button("🚪 Chiqish (logout)", use_container_width=True):
-            st.session_state.user = None
-            st.rerun()
 else:
     with st.form("login_form", clear_on_submit=False):
         first = st.text_input("Ism", placeholder="Suhrob")
