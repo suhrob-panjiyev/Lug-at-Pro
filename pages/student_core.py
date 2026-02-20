@@ -32,8 +32,10 @@ def render_sidebar(active: str = "student"):
         if st.button("👨‍🏫 Teacher", use_container_width=True):
             st.switch_page("pages/2_Teacher.py")
 
-        if st.button("👤 Sayt haqimda", use_container_width=True):
+        if st.button("👤 Sayt haqida", use_container_width=True):
             st.switch_page("pages/3_About.py")
+        if st.button("👤 Profil", use_container_width=True):
+            st.switch_page("pages/4_Profile.py")
 
         st.divider()
         st.caption("© 2026 • Built by Suhrob")
@@ -468,3 +470,9 @@ def render_top_nav(active: str = "add", page_key: str = "student", **kwargs):
             type="primary" if active == "levels" else "secondary"
         ):
             st.switch_page("pages/1_4_levels.py")
+
+def require_login():
+    """User sessiyada bo'lmasa, app.py (Home)ga qaytaradi."""
+    if "user" not in st.session_state or not st.session_state.user:
+        st.warning("Davom etish uchun avval login qiling 🙂")
+        st.switch_page("app.py")

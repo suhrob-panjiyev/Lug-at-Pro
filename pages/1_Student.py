@@ -5,6 +5,8 @@ from pages.student_core import (
 )
 
 st.set_page_config(page_title="Student — Lug'at Pro", page_icon="🎓", layout="wide")
+from pages.student_core import require_login
+require_login()
 
 render_sidebar(active="student")
 ensure_state()

@@ -12,6 +12,8 @@ from pages.student_core import (
     norm_en, suggestions, translate_mymemory, is_weird_translation,
     save_user_words
 )
+from pages.student_core import require_login
+require_login()
 
 st.set_page_config(page_title="Student — So‘z qo‘shish", page_icon="➕", layout="wide")
 render_sidebar(active="student")

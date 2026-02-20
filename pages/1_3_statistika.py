@@ -4,6 +4,8 @@ from pages.student_core import (
     inject_student_css, render_hero, render_top_nav,
     QUESTIONS_PER_TEST, acc_pct, save_stats
 )
+from pages.student_core import require_login
+require_login()
 
 st.set_page_config(page_title="Student — Statistika", page_icon="📊", layout="wide")
 render_sidebar(active="student")

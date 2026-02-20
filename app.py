@@ -22,6 +22,8 @@ with st.sidebar:
 
     if st.button("👤 Sayt haqida", use_container_width=True):
         st.switch_page("pages/3_About.py")
+    if st.button("👤 Profil", use_container_width=True):
+        st.switch_page("pages/4_Profile.py")
 
     st.divider()
     st.caption("© 2026 • Built by Suhrob")
@@ -93,6 +95,44 @@ st.markdown(
     """,
     unsafe_allow_html=True
 )
+
+from auth import upsert_user, is_valid_uz_phone, norm_phone
+
+st.write("")
+st.markdown("## 🔐 Login ")
+
+if "user" not in st.session_state:
+    st.session_state.user = None
+
+if st.session_state.user:
+    u = st.session_state.user
+    st.success(f"✅ Tizimga kirdingiz.")
+
+    c1, c2 = st.columns([1, 1])
+    with c1:
+        if st.button("🎓 Student bo‘limiga o‘tish", type="primary", use_container_width=True):
+            st.switch_page("pages/1_Student.py")
+    with c2:
+        if st.button("🚪 Chiqish (logout)", use_container_width=True):
+            st.session_state.user = None
+            st.rerun()
+else:
+    with st.form("login_form", clear_on_submit=False):
+        first = st.text_input("Ism", placeholder="Suhrob")
+        last = st.text_input("Familiya", placeholder="Panjiyev")
+        phone = st.text_input("Telefon (+998901234567)", placeholder="+998...")
+        ok = st.form_submit_button("✅ Login", use_container_width=True)
+
+    if ok:
+        if not first.strip() or not last.strip():
+            st.error("Ism va familiya kerak.")
+        elif not is_valid_uz_phone(phone):
+            st.error("Telefon formati noto‘g‘ri. Masalan: +998901234567")
+        else:
+            u = upsert_user(first, last, phone)
+            st.session_state.user = u
+            st.success("Login bo‘ldi ✅")
+            st.rerun()
 
 
 st.markdown(

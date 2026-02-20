@@ -10,6 +10,9 @@ from pages.student_core import (
     acc_pct, record_manual_result, record_csv_result, save_stats
 )
 
+from pages.student_core import require_login
+require_login()
+
 st.set_page_config(page_title="Student — Test", page_icon="📝", layout="wide")
 render_sidebar(active="student")
 ensure_state()

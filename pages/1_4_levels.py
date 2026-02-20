@@ -11,6 +11,8 @@ from pages.student_core import (
 from ai.cefr.infer import load_model
 
 LEVELS = ["A1", "A2", "B1", "B2", "C1", "C2"]
+from pages.student_core import require_login
+require_login()
 
 st.set_page_config(page_title="Student — Levels", page_icon="📚", layout="wide")
 render_sidebar(active="student")
