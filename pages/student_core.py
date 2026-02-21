@@ -4,6 +4,13 @@ from typing import Optional, List
 from pathlib import Path
 from core.word_repo_db import get_user_words_map
 
+from ui.student_ui import (
+    render_sidebar as _render_sidebar,
+    inject_student_css as _inject_student_css,
+    render_hero as _render_hero,
+    render_top_nav as _render_top_nav,
+)
+
 # =========================
 # CONFIG + TEXT
 # =========================

@@ -28,6 +28,7 @@ with c_hint:
 
 stats_obj = st.session_state.stats_obj
 
+
 # ---------------------------
 # Helpers: history -> df
 # ---------------------------
@@ -41,6 +42,7 @@ def to_df(hist: list, kind: str):
         df["test_id"] = None
     df = df.dropna(subset=["ts"]).sort_values("ts")
     return df
+
 
 manual_df = to_df(stats_obj.get("manual", {}).get("history", []), "Manual")
 csv_df = to_df(stats_obj.get("csv", {}).get("history", []), "CSV")
@@ -83,28 +85,44 @@ st.markdown("#### 1) Umumiy aniqlik — donut ko‘rinish")
 colA, colB = st.columns([1.2, 1])
 
 with colA:
-    # Donut chart (2 rings)
+    values = [float(m_pct), float(csv_pct)]
+    labels = ["Manual", "CSV"]
+
+    # ✅ NaN/None bo'lsa 0 qilamiz (extra safety)
+    clean_values = []
+    for v in values:
+        if v is None:
+            clean_values.append(0.0)
+        elif isinstance(v, float) and np.isnan(v):
+            clean_values.append(0.0)
+        else:
+            clean_values.append(float(v))
+    values = clean_values
+
     fig, ax = plt.subplots(figsize=(5.2, 3.0))
     ax.set_title("Aniqlik (%) — Manual vs CSV")
 
-    values = [m_pct, csv_pct]
-    labels = ["Manual", "CSV"]
+    # ✅ Agar hali umuman natija bo'lmasa (ikkalasi 0 bo'lsa), pie chizmaymiz
+    if sum(values) <= 0:
+        st.info("Donut grafik uchun hozircha ma'lumot yetarli emas. Avval bir nechta test ishlang 🙂")
+    else:
+        ax.pie(
+            values,
+            labels=labels,
+            startangle=90,
+            wedgeprops=dict(width=0.35)
+        )
 
-    # pie -> donut
-    wedges, _ = ax.pie(
-        values,
-        labels=labels,
-        startangle=90,
-        wedgeprops=dict(width=0.35)
-    )
+        # Center text
+        avg = (values[0] + values[1]) / 2.0
+        ax.text(0, 0.05, f"{avg:.1f}%", ha="center", va="center",
+                fontsize=16, fontweight="bold")
+        ax.text(0, -0.18, "o‘rtacha", ha="center", va="center",
+                fontsize=10, alpha=0.8)
 
-    # Center text
-    ax.text(0, 0.05, f"{(m_pct+csv_pct)/2:.1f}%", ha="center", va="center", fontsize=16, fontweight="bold")
-    ax.text(0, -0.18, "o‘rtacha", ha="center", va="center", fontsize=10, alpha=0.8)
-
-    ax.axis("equal")
-    fig.tight_layout()
-    st.pyplot(fig, use_container_width=True)
+        ax.axis("equal")
+        fig.tight_layout()
+        st.pyplot(fig, use_container_width=True)
 
 with colB:
     st.markdown(
@@ -130,20 +148,19 @@ df_all = df_all.dropna(subset=["ts"]).sort_values("ts").tail(N)
 if df_all.empty:
     st.info("Trend ko‘rish uchun history yo‘q. Bir nechta test ishlang 🙂")
 else:
-    # Sparkline style: 2 ta kichik grafik yonma-yon
     sp1, sp2 = st.columns(2)
 
     def spark(df_kind: pd.DataFrame, title: str):
         fig, ax = plt.subplots(figsize=(6.2, 1.8))
         y = df_kind["pct"].to_list()
         x = list(range(1, len(y) + 1))
+
         ax.plot(x, y, linewidth=2.2, marker="o", markersize=3.5)
         ax.fill_between(x, y, alpha=0.15)
         ax.set_title(title)
         ax.set_ylim(0, 100)
         ax.grid(True, alpha=0.25)
 
-        # minimal axes
         ax.set_xticks([])
         ax.set_ylabel("%")
 
@@ -154,12 +171,18 @@ else:
         return fig
 
     with sp1:
-        d = df_all[df_all["kind"] == "Manual"].copy()
-        st.pyplot(spark(d, "Manual — oxirgi urinishlar"), use_container_width=True)
+        d_kind = df_all[df_all["kind"] == "Manual"].copy()
+        if d_kind.empty:
+            st.info("Manual history yo‘q.")
+        else:
+            st.pyplot(spark(d_kind, "Manual — oxirgi urinishlar"), use_container_width=True)
 
     with sp2:
-        d = df_all[df_all["kind"] == "CSV"].copy()
-        st.pyplot(spark(d, "CSV — oxirgi urinishlar"), use_container_width=True)
+        d_kind = df_all[df_all["kind"] == "CSV"].copy()
+        if d_kind.empty:
+            st.info("CSV history yo‘q.")
+        else:
+            st.pyplot(spark(d_kind, "CSV — oxirgi urinishlar"), use_container_width=True)
 
 st.divider()
 
@@ -176,19 +199,20 @@ for test_id, v in tests.items():
     if tot > 0 and str(test_id).isdigit():
         rows.append({"test_id": int(test_id), "pct": acc_pct(cor, tot), "att": att, "tot": tot})
 
-d = pd.DataFrame(rows).sort_values("test_id")
-d["test_id"] = pd.to_numeric(d["test_id"], errors="coerce")
-d = d.dropna(subset=["test_id"]).copy()
-d["test_id"] = d["test_id"].astype(int)
+d = pd.DataFrame(rows)
+if not d.empty:
+    d = d.sort_values("test_id").copy()
+    d["test_id"] = pd.to_numeric(d["test_id"], errors="coerce")
+    d = d.dropna(subset=["test_id"]).copy()
+    d["test_id"] = d["test_id"].astype(int)
+
 if d.empty:
     st.info("CSV testlar hali ishlanmagan.")
 else:
-    # heatmap grid: 10 ustunli panel ko‘rinish
     cols = 10
     max_id = int(d["test_id"].max())
     size = max_id
 
-    # 1..max_id bo‘yicha array tayyorlaymiz
     acc_arr = np.full(size, np.nan, dtype=float)
     att_arr = np.zeros(size, dtype=int)
 
@@ -203,7 +227,6 @@ else:
         acc_arr[tid - 1] = float(r["pct"])
         att_arr[tid - 1] = int(r["att"])
 
-    # reshape
     rows_n = int(np.ceil(size / cols))
     padded = rows_n * cols - size
     if padded:
@@ -211,7 +234,6 @@ else:
         att_arr = np.concatenate([att_arr, np.zeros(padded, dtype=int)])
 
     acc_grid = acc_arr.reshape(rows_n, cols)
-    att_grid = att_arr.reshape(rows_n, cols)
 
     fig, ax = plt.subplots(figsize=(8.0, 3.4))
     im = ax.imshow(acc_grid, aspect="auto")
@@ -220,7 +242,6 @@ else:
     ax.set_xlabel("Test bloklari")
     ax.set_ylabel("Qatorlar")
 
-    # cell text: % va urinish
     for i in range(rows_n):
         for j in range(cols):
             val = acc_grid[i, j]
@@ -233,7 +254,6 @@ else:
     fig.tight_layout()
     st.pyplot(fig, use_container_width=True)
 
-    # foydali jadval (top-10 qiyin)
     d2 = d.sort_values("pct", ascending=True).head(10).copy()
     d2["Test"] = d2["test_id"].apply(lambda x: f"Test-{x}")
     d2["Aniqlik"] = d2["pct"].map(lambda x: f"{x:.1f}%")
@@ -250,13 +270,11 @@ st.markdown("#### 4) Urinish vs Aniqlik — qayerda ko‘p urinyapsiz, natija qa
 if d.empty:
     st.info("Scatter uchun CSV testlar yetarli emas.")
 else:
-    # ✅ ustun nomini himoyalaymiz
     if "att" not in d.columns:
-        # ba'zan 'attempts' deb chiqib qolishi mumkin
         if "attempts" in d.columns:
             d["att"] = d["attempts"]
         else:
-            d["att"] = 0  # fallback
+            d["att"] = 0
 
     if "pct" not in d.columns:
         st.warning("Aniqlik ma'lumoti yo‘q (pct).")
@@ -269,7 +287,6 @@ else:
         ax.set_ylim(0, 100)
         ax.grid(True, alpha=0.25)
 
-        # eng qiyin 5 ta nuqtani label qilamiz
         if "test_id" in d.columns:
             hard = d.sort_values("pct", ascending=True).head(5)
             for _, r in hard.iterrows():
