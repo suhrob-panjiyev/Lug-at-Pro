@@ -109,7 +109,8 @@ if do_test:
     level_keys = dff["key"].tolist()
     random.shuffle(level_keys)
     level_keys = level_keys[:QUESTIONS_PER_TEST] if len(level_keys) >= QUESTIONS_PER_TEST else level_keys
-
+    
+    st.session_state.current_level = pick_level
     start_quiz("level", level_keys)
     st.switch_page("pages/1_2_test.py")
 

@@ -1,16 +1,15 @@
 import streamlit as st
 import random
 import pandas as pd
-
 from pages.student_core import (
     render_sidebar, ensure_state,
     inject_student_css, render_hero, render_top_nav,
     QUESTIONS_PER_TEST, norm_uz,
     start_quiz, reset_quiz_to_menu, build_question_from_map,
-    acc_pct, record_manual_result, record_csv_result, save_stats
+    acc_pct, record_manual_result, record_csv_result, record_level_result,
+    save_stats, require_login
 )
 
-from pages.student_core import require_login
 require_login()
 
 st.set_page_config(page_title="Student — Test", page_icon="📝", layout="wide")
@@ -218,15 +217,39 @@ elif st.session_state.quiz_page == "result":
     # natijani 1 marta saqlash
     if "result_saved" not in st.session_state:
         st.session_state.result_saved = False
+# ======================================================
+
 
     if not st.session_state.result_saved:
-        if mode == "manual":
-            record_manual_result(st.session_state.stats_obj, score, total_q)
+
+        if mode == "manual":    
+            record_manual_result(
+                st.session_state.stats_obj,
+                score,
+                total_q
+            )
+
+        elif mode == "level":
+            lv = st.session_state.get("current_level", "-")
+            record_level_result(
+                st.session_state.stats_obj,
+                lv,
+                score,
+                total_q
+            )
+
         elif mode == "csv":
-            record_csv_result(st.session_state.stats_obj, st.session_state.csv_test_id, score, total_q)
-        # level mode uchun stats yozmaymiz (xohlasangiz keyin qo‘shamiz)
-        save_stats(st.session_state.stats_obj)
-        st.session_state.result_saved = True
+            t_id = st.session_state.get("csv_test_id")
+            if t_id is not None:
+                record_csv_result(
+                    st.session_state.stats_obj,
+                    int(t_id),
+                    score,
+                    total_q
+                )
+
+                save_stats(st.session_state.stats_obj)
+                st.session_state.result_saved = True
 
     if mode == "manual":
         mode_title = "🧑‍💻 Mening so‘zlarim"

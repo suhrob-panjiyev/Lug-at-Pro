@@ -18,6 +18,13 @@ render_top_nav(active="stats", page_key="stats")
 
 st.markdown("### 📊 Statistika")
 
+colA, colB = st.columns([1, 3])
+with colA:
+    if st.button("📈 Grafiklar", type="primary", use_container_width=True):
+        st.switch_page("pages/1_5_analytics.py")
+with colB:
+    st.caption("Grafiklar: progress, trend, qiyin testlar.")
+
 s1, s2 = st.columns(2)
 with s1:
     if st.button("🧑‍💻 Mening so‘zlarim", use_container_width=True,
