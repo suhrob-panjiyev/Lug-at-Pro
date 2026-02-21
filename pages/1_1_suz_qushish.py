@@ -1,21 +1,32 @@
 import streamlit as st
 from streamlit_searchbox import st_searchbox
+import random
+import json
+import csv
+from pathlib import Path
+import requests
+import pandas as pd
+from typing import Optional, List
+from datetime import datetime
 
 # ✅ NEW imports
 from gtts import gTTS
 import io
 import base64
 
+# ✅ 3) SAVE PATCH: DB repo import
+from core.word_repo_db import upsert_word, get_user_words_map
+
 from pages.student_core import (
     render_sidebar, ensure_state,
     inject_student_css, render_hero, render_top_nav,
-    norm_en, suggestions, translate_mymemory, is_weird_translation,
-    save_user_words
+    norm_en, suggestions, translate_mymemory, is_weird_translation
 )
 from pages.student_core import require_login
-require_login()
 
+require_login()
 st.set_page_config(page_title="Student — So‘z qo‘shish", page_icon="➕", layout="wide")
+
 render_sidebar(active="student")
 ensure_state()
 inject_student_css()
@@ -155,9 +166,13 @@ if en_key and en_key in st.session_state.base_map:
         default=existing[:1] if existing else []
     )
 
+    # ✅ 3.1 CSV’dan topilgan so‘z save joyi (DB)
     if st.button("💾 Saqlash", type="primary", use_container_width=True, disabled=(len(selected) == 0)):
-        st.session_state.user_map[en_key] = {"en": item["en"], "uz_list": selected}
-        save_user_words(st.session_state.user_map)
+        u = st.session_state.user
+        user_id = int(u["id"])
+
+        upsert_word(user_id, item["en"], selected)
+        st.session_state.user_map = get_user_words_map(user_id)
         st.success("Saqlandi ✅")
 
 # ---------------------------
@@ -197,9 +212,13 @@ else:
             default=default_pick
         )
 
+    # ✅ 3.2 Avto tarjima save joyi (DB)
     if st.button("💾 Saqlash", type="primary", use_container_width=True, disabled=(not en_word or len(selected) == 0)):
-        st.session_state.user_map[en_key] = {"en": en_word, "uz_list": selected}
-        save_user_words(st.session_state.user_map)
+        u = st.session_state.user
+        user_id = int(u["id"])
+
+        upsert_word(user_id, en_word, selected)
+        st.session_state.user_map = get_user_words_map(user_id)
         st.success("Saqlandi ✅")
 
 # ---------------------------

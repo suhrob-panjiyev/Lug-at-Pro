@@ -24,6 +24,8 @@ def render_sidebar(active: str = "student"):
 
         if st.button("👤 Profil", width="stretch"):
             st.switch_page("pages/4_Profile.py")
+        if st.button("🛡️ Admin", use_container_width=True):
+            st.switch_page("pages/5_Admin_Login.py")
 
         st.divider()
         st.caption("© 2026 • Built by Suhrob")

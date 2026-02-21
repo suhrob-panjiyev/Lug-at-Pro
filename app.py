@@ -1,5 +1,8 @@
 import streamlit as st
 
+from core.db import init_db
+init_db()
+
 st.set_page_config(
     page_title="Lug'at Pro — Home",
     page_icon="📘",
@@ -24,7 +27,15 @@ with st.sidebar:
         st.switch_page("pages/3_About.py")
     if st.button("👤 Profil", use_container_width=True):
         st.switch_page("pages/4_Profile.py")
-
+    # faqat admin ko'rsin
+    admin_phones = st.secrets.get("ADMIN_PHONES", [])
+    me = st.session_state.get("user") or {}
+    if (me.get("phone") or "") in admin_phones:
+        if st.button("🛡️ Admin", use_container_width=True):
+            st.switch_page("pages/5_Admin.py")
+    if st.button("🛡️ Admin", use_container_width=True):
+        st.switch_page("pages/5_Admin_Login.py")
+        
     st.divider()
     st.caption("© 2026 • Built by Suhrob")
 
@@ -99,7 +110,7 @@ st.markdown(
 from auth import upsert_user, is_valid_uz_phone, norm_phone
 
 st.write("")
-st.markdown("## 🔐 Login ")
+st.markdown("## 🔐 Ro'yxatdan o'tish / Kirish ")
 
 if "user" not in st.session_state:
     st.session_state.user = None

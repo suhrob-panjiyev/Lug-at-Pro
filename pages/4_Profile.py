@@ -3,13 +3,14 @@ import hashlib
 from datetime import datetime
 
 from pages.student_core import render_sidebar
-from auth import load_users
+from core.user_repo_db import get_user_by_phone
 
 
 st.set_page_config(page_title="Profil", page_icon="👤", layout="wide")
 render_sidebar(active="student")  # sidebar style bir xil bo'lib turadi
 
 st.markdown("## 👤 Profil")
+
 # Orqaga tugmasi (Home ga)
 top_left, top_right = st.columns([1, 5])
 
@@ -32,7 +33,7 @@ u = st.session_state.user
 # ---------------------------
 # Avatar generator (deterministik)
 # ---------------------------
-EMOJIS = ["🦊", "🐯", "🐼", "🦁", "🐸", "🐵", "🐙", "🦉", "🐺", "🐨", "🐧", "🐝", "🦄", "   🐲"]
+EMOJIS = ["🦊", "🐯", "🐼", "🦁", "🐸", "🐵", "🐙", "🦉", "🐺", "🐨", "🐧", "🐝", "🦄", "🐲"]
 COLORS = ["#ff4757", "#ffa502", "#2ed573", "#1e90ff", "#3742fa", "#a55eea", "#ff6b81", "#7bed9f"]
 
 def stable_hash(s: str) -> int:
@@ -99,15 +100,14 @@ st.markdown(
 st.write("")
 
 # ---------------------------
-# Extra info (users.json dan real holatini ko'rsatamiz)
+# Extra info (DB dan real holatini ko'rsatamiz)
 # ---------------------------
-users_obj = load_users()
-db_user = users_obj.get("users", {}).get(u.get("phone", ""), u)
+db_user = get_user_by_phone(u.get("phone", "")) or u
 
 def fmt_dt(s: str):
     if not s:
         return "-"
-    return s.replace("T", " ").replace("Z", "")
+    return str(s).replace("T", " ").replace("Z", "")
 
 c1, c2, c3 = st.columns(3)
 c1.metric("Ro‘yxatdan o‘tgan", fmt_dt(db_user.get("created_at", "")))

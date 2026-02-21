@@ -2,6 +2,7 @@ import streamlit as st
 import requests
 from typing import Optional, List
 from pathlib import Path
+from core.word_repo_db import get_user_words_map
 
 # =========================
 # CONFIG + TEXT
@@ -109,7 +110,11 @@ def ensure_state():
 
     # User words
     if "user_map" not in st.session_state:
-        st.session_state.user_map = load_user_words()
+        if "user" in st.session_state and st.session_state.user:
+            uid = int(st.session_state.user["id"])
+            st.session_state.user_map = get_user_words_map(uid)
+        else:
+            st.session_state.user_map = {}
 
     # english list
     if "english_list_csv" not in st.session_state:

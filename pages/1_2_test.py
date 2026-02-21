@@ -9,6 +9,7 @@ from pages.student_core import (
     acc_pct, record_manual_result, record_csv_result, record_level_result,
     save_stats, require_login
 )
+from core.stats_repo_db import add_attempt, get_stats_obj
 
 require_login()
 
@@ -222,34 +223,24 @@ elif st.session_state.quiz_page == "result":
 
     if not st.session_state.result_saved:
 
-        if mode == "manual":    
-            record_manual_result(
-                st.session_state.stats_obj,
-                score,
-                total_q
-            )
+        u = st.session_state.user
+        user_id = int(u["id"])
+
+        if mode == "manual":
+            add_attempt(user_id, "manual", score, total_q)
 
         elif mode == "level":
             lv = st.session_state.get("current_level", "-")
-            record_level_result(
-                st.session_state.stats_obj,
-                lv,
-                score,
-                total_q
-            )
+            add_attempt(user_id, "level", score, total_q, level=str(lv).upper())
 
         elif mode == "csv":
             t_id = st.session_state.get("csv_test_id")
             if t_id is not None:
-                record_csv_result(
-                    st.session_state.stats_obj,
-                    int(t_id),
-                    score,
-                    total_q
-                )
+                add_attempt(user_id, "csv", score, total_q, test_id=int(t_id))
 
-                save_stats(st.session_state.stats_obj)
-                st.session_state.result_saved = True
+        # DB dan yangilangan statistikani qayta yuklaymiz
+        st.session_state.stats_obj = get_stats_obj(user_id)
+        st.session_state.result_saved = True
 
     if mode == "manual":
         mode_title = "🧑‍💻 Mening so‘zlarim"
