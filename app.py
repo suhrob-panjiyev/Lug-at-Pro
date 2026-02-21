@@ -17,6 +17,9 @@ with st.sidebar:
     if st.button("🏠 Home", use_container_width=True):
         st.switch_page("app.py")
 
+    # if st.button("🔐 Login", use_container_width=True):
+    #     st.switch_page("pages/0_Login.py")
+
     if st.button("🎓 Student (Test)", use_container_width=True):
         st.switch_page("pages/1_Student.py")
 
@@ -25,22 +28,30 @@ with st.sidebar:
 
     if st.button("👤 Sayt haqida", use_container_width=True):
         st.switch_page("pages/3_About.py")
+
     if st.button("👤 Profil", use_container_width=True):
         st.switch_page("pages/4_Profile.py")
-    # faqat admin ko'rsin
+
+    # ✅ Admin: faqat bittasini ko'rsatamiz (avvalgi logikangiz saqlanadi)
     admin_phones = st.secrets.get("ADMIN_PHONES", [])
+    if isinstance(admin_phones, str):
+        admin_phones = [x.strip() for x in admin_phones.split(",") if x.strip()]
+
     me = st.session_state.get("user") or {}
-    if (me.get("phone") or "") in admin_phones:
+    my_phone = (me.get("phone") or "").strip()
+
+    if my_phone and (my_phone in admin_phones):
         if st.button("🛡️ Admin", use_container_width=True):
             st.switch_page("pages/5_Admin.py")
-    if st.button("🛡️ Admin", use_container_width=True):
-        st.switch_page("pages/5_Admin_Login.py")
-        
+    else:
+        if st.button("🛡️ Admin Login", use_container_width=True):
+            st.switch_page("pages/5_Admin_Login.py")
+
     st.divider()
     st.caption("© 2026 • Built by Suhrob")
 
 
-# ---------- Home content ----------
+# ---------- Styles ----------
 st.markdown(
     """
     <style>
@@ -51,17 +62,17 @@ st.markdown(
         border: 1px solid rgba(255,255,255,0.08);
       }
 
-      .bigtitle { 
-        font-size: 44px; 
-        font-weight: 800; 
-        line-height: 1.1; 
-        margin-bottom: 10px; 
+      .bigtitle {
+        font-size: 44px;
+        font-weight: 800;
+        line-height: 1.1;
+        margin-bottom: 10px;
       }
 
-      .subtitle { 
-        font-size: 18px; 
-        opacity: 0.9; 
-        margin-bottom: 18px; 
+      .subtitle {
+        font-size: 18px;
+        opacity: 0.9;
+        margin-bottom: 18px;
       }
 
       .pill {
@@ -85,59 +96,36 @@ st.markdown(
 
       /* 📱 Telefon uchun */
       @media (max-width: 768px) {
-        .hero {
-          padding: 18px;
-        }
-
-        .bigtitle {
-          font-size: 28px;
-        }
-
-        .subtitle {
-          font-size: 15px;
-        }
-
-        .pill {
-          font-size: 12px;
-          padding: 5px 8px;
-        }
+        .hero { padding: 18px; }
+        .bigtitle { font-size: 28px; }
+        .subtitle { font-size: 15px; }
+        .pill { font-size: 12px; padding: 5px 8px; }
       }
     </style>
     """,
     unsafe_allow_html=True
 )
 
-from auth import upsert_user, is_valid_uz_phone, norm_phone
-
+# ---------- Home content ----------
 st.write("")
-st.markdown("## 🔐 Ro'yxatdan o'tish / Kirish ")
+# st.markdown("## 🏠 Home")
 
 if "user" not in st.session_state:
     st.session_state.user = None
 
 if st.session_state.user:
     u = st.session_state.user
-    st.success(f"✅ Tizimga kirdingiz.")
-
+    st.success(f"✅ Xush kelibsiz, {u.get('first_name','')}!")
+    # if st.button("🎓 Student bo‘limiga o‘tish", type="primary", use_container_width=True):
+    #     st.switch_page("pages/1_Student.py")
 else:
-    with st.form("login_form", clear_on_submit=False):
-        first = st.text_input("Ism", placeholder="Suhrob")
-        last = st.text_input("Familiya", placeholder="Panjiyev")
-        phone = st.text_input("Telefon (+998901234567)", placeholder="+998...")
-        ok = st.form_submit_button("✅ Login", use_container_width=True)
+    st.info("Davom etish uchun login qiling.")
+    if st.button("🔐 Login sahifasiga o‘tish", type="primary", use_container_width=True):
+        st.switch_page("pages/0_Login.py")
 
-    if ok:
-        if not first.strip() or not last.strip():
-            st.error("Ism va familiya kerak.")
-        elif not is_valid_uz_phone(phone):
-            st.error("Telefon formati noto‘g‘ri. Masalan: +998901234567")
-        else:
-            u = upsert_user(first, last, phone)
-            st.session_state.user = u
-            st.success("Login bo‘ldi ✅")
-            st.rerun()
+st.write("")
 
-
+# --- Hero / cards / dizayn (login bo‘lmasa ham ko‘rinadi) ---
 st.markdown(
     """
     <div class="hero">

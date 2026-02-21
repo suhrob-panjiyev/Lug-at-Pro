@@ -157,5 +157,5 @@ def ensure_state():
 def require_login():
     if "user" not in st.session_state or not st.session_state.user:
         st.warning("Davom etish uchun avval login qiling 🙂")
-        st.switch_page("app.py")
+        st.switch_page("pages/0_Login.py")
         st.stop()
