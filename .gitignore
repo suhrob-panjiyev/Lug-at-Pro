@@ -1,6 +1,10 @@
+.env
+*.db
+data/*.db
 __pycache__/
 *.pyc
-.streamlit/secrets.toml
-stats.json
-user_words.json
-words.json
+.venv/
+venv/
+.idea/
+.vscode/
+.DS_Store
