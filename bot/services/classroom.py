@@ -7,8 +7,8 @@ from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
 from bot.storage.db import get_conn
-
-
+def _is_psycopg_conn(conn) -> bool:
+    return conn.__class__.__module__.startswith("psycopg")
 TZ = ZoneInfo("Asia/Samarkand")
 
 
@@ -21,7 +21,7 @@ def get_class_by_group(group_id: int):
     conn = get_conn()
     cur = conn.cursor()
     cur.execute(
-        "SELECT id, name, group_id, teacher_id FROM classes WHERE group_id=? ORDER BY id DESC LIMIT 1",
+        "SELECT id, name, group_id, teacher_id FROM classes WHERE group_id=%s ORDER BY id DESC LIMIT 1",
         (group_id,),
     )
     row = cur.fetchone()
@@ -32,20 +32,32 @@ def get_class_by_group(group_id: int):
 def get_group_id_by_class(class_id: int) -> int | None:
     conn = get_conn()
     cur = conn.cursor()
-    cur.execute("SELECT group_id FROM classes WHERE id=?", (class_id,))
+    sql = "SELECT group_id FROM classes WHERE id=%s" if _is_psycopg_conn(conn) else "SELECT group_id FROM classes WHERE id=?"
+    cur.execute(sql, (class_id,))
     row = cur.fetchone()
     conn.close()
     return int(row[0]) if row else None
 
 
 def ensure_member(class_id: int, user_id: int, full_name: str) -> None:
-    """Insert member if missing (robust even if join-link wasn't used)."""
     conn = get_conn()
     cur = conn.cursor()
-    cur.execute(
-        "INSERT OR IGNORE INTO members (class_id, user_id, full_name) VALUES (?, ?, ?)",
-        (class_id, user_id, full_name),
-    )
+
+    if _is_psycopg_conn(conn):
+        cur.execute(
+            """
+            INSERT INTO members (class_id, user_id, full_name)
+            VALUES (%s, %s, %s)
+            ON CONFLICT (class_id, user_id) DO NOTHING
+            """,
+            (class_id, user_id, full_name),
+        )
+    else:
+        cur.execute(
+            "INSERT OR IGNORE INTO members (class_id, user_id, full_name) VALUES (?, ?, ?)",
+            (class_id, user_id, full_name),
+        )
+
     conn.commit()
     conn.close()
 
@@ -84,28 +96,47 @@ def _deadline_at_for_today(deadline_hhmm: str | None) -> str | None:
 
 
 def create_assignment(class_id: int, n_questions: int, deadline_hhmm: str | None):
-    """Create a new assignment.
-
-    Stores deadline_hhmm and also fills deadline_at (if migrations already added the column).
-    If deadline_at column doesn't exist (very old DB), insertion with deadline_at is skipped.
-    """
     dl_at = _deadline_at_for_today(deadline_hhmm)
 
     conn = get_conn()
     cur = conn.cursor()
-    try:
-        cur.execute(
-            "INSERT INTO assignments (class_id, n_questions, deadline_hhmm, deadline_at) VALUES (?, ?, ?, ?)",
-            (class_id, n_questions, deadline_hhmm, dl_at),
-        )
-    except Exception:
-        # fallback for old schema without deadline_at
-        cur.execute(
-            "INSERT INTO assignments (class_id, n_questions, deadline_hhmm) VALUES (?, ?, ?)",
-            (class_id, n_questions, deadline_hhmm),
-        )
 
-    aid = cur.lastrowid
+    if _is_psycopg_conn(conn):
+        # Postgres
+        try:
+            cur.execute(
+                """
+                INSERT INTO assignments (class_id, n_questions, deadline_hhmm, deadline_at)
+                VALUES (%s, %s, %s, %s)
+                RETURNING id
+                """,
+                (class_id, n_questions, deadline_hhmm, dl_at),
+            )
+            aid = cur.fetchone()[0]
+        except Exception:
+            cur.execute(
+                """
+                INSERT INTO assignments (class_id, n_questions, deadline_hhmm)
+                VALUES (%s, %s, %s)
+                RETURNING id
+                """,
+                (class_id, n_questions, deadline_hhmm),
+            )
+            aid = cur.fetchone()[0]
+    else:
+        # SQLite
+        try:
+            cur.execute(
+                "INSERT INTO assignments (class_id, n_questions, deadline_hhmm, deadline_at) VALUES (?, ?, ?, ?)",
+                (class_id, n_questions, deadline_hhmm, dl_at),
+            )
+        except Exception:
+            cur.execute(
+                "INSERT INTO assignments (class_id, n_questions, deadline_hhmm) VALUES (?, ?, ?)",
+                (class_id, n_questions, deadline_hhmm),
+            )
+        aid = cur.lastrowid
+
     conn.commit()
     conn.close()
     return aid
@@ -115,7 +146,7 @@ def get_active_assignment(class_id: int):
     conn = get_conn()
     cur = conn.cursor()
     cur.execute(
-        "SELECT id, n_questions, deadline_hhmm FROM assignments WHERE class_id=? AND is_active=1 ORDER BY id DESC LIMIT 1",
+        "SELECT id, n_questions, deadline_hhmm FROM assignments WHERE class_id=%s AND is_active=1 ORDER BY id DESC LIMIT 1",
         (class_id,),
     )
     row = cur.fetchone()
@@ -124,13 +155,10 @@ def get_active_assignment(class_id: int):
 
 
 def set_assignment_questions(assignment_id: int, questions_payload: list) -> None:
-    """Save fixed quiz payload (list of dicts) into assignments.questions_json."""
     conn = get_conn()
     cur = conn.cursor()
-    cur.execute(
-        "UPDATE assignments SET questions_json=? WHERE id=?",
-        (json.dumps(questions_payload, ensure_ascii=False), assignment_id),
-    )
+    sql = "UPDATE assignments SET questions_json=%s WHERE id=%s" if _is_psycopg_conn(conn) else "UPDATE assignments SET questions_json=? WHERE id=?"
+    cur.execute(sql, (json.dumps(questions_payload, ensure_ascii=False), assignment_id))
     conn.commit()
     conn.close()
 
@@ -138,7 +166,8 @@ def set_assignment_questions(assignment_id: int, questions_payload: list) -> Non
 def get_assignment_questions(assignment_id: int):
     conn = get_conn()
     cur = conn.cursor()
-    cur.execute("SELECT questions_json FROM assignments WHERE id=? AND is_active=1", (assignment_id,))
+    sql = "SELECT questions_json FROM assignments WHERE id=%s AND is_active=1" if _is_psycopg_conn(conn) else "SELECT questions_json FROM assignments WHERE id=? AND is_active=1"
+    cur.execute(sql, (assignment_id,))
     row = cur.fetchone()
     conn.close()
     if not row or not row[0]:
@@ -236,14 +265,35 @@ def save_attempt(
 ) -> None:
     conn = get_conn()
     cur = conn.cursor()
-    cur.execute(
-        """
-        INSERT OR REPLACE INTO attempts
-        (assignment_id, class_id, user_id, full_name, score, total, pct, is_late, answers_json)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """,
-        (assignment_id, class_id, user_id, full_name, score, total, pct, int(is_late), answers_json),
-    )
+
+    if _is_psycopg_conn(conn):
+        cur.execute(
+            """
+            INSERT INTO attempts
+            (assignment_id, class_id, user_id, full_name, score, total, pct, is_late, answers_json)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+            ON CONFLICT (assignment_id, user_id)
+            DO UPDATE SET
+                full_name=EXCLUDED.full_name,
+                score=EXCLUDED.score,
+                total=EXCLUDED.total,
+                pct=EXCLUDED.pct,
+                is_late=EXCLUDED.is_late,
+                answers_json=EXCLUDED.answers_json,
+                finished_at=NOW()
+            """,
+            (assignment_id, class_id, user_id, full_name, score, total, pct, int(is_late), answers_json),
+        )
+    else:
+        cur.execute(
+            """
+            INSERT OR REPLACE INTO attempts
+            (assignment_id, class_id, user_id, full_name, score, total, pct, is_late, answers_json)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (assignment_id, class_id, user_id, full_name, score, total, pct, int(is_late), answers_json),
+        )
+
     conn.commit()
     conn.close()
 
@@ -262,17 +312,32 @@ def weekly_top3(class_id: int, days: int = 7):
     conn = get_conn()
     cur = conn.cursor()
     since = (datetime.now() - timedelta(days=days)).strftime("%Y-%m-%d")
-    cur.execute(
-        """
-        SELECT user_id, full_name, SUM(xp) as total
-        FROM xp_log
-        WHERE class_id=? AND DATE(created_at) >= ?
-        GROUP BY user_id
-        ORDER BY total DESC
-        LIMIT 3
-        """,
-        (class_id, since),
-    )
+
+    if _is_psycopg_conn(conn):
+        cur.execute(
+            """
+            SELECT user_id, full_name, SUM(xp) as total
+            FROM xp_log
+            WHERE class_id=%s AND created_at::date >= %s::date
+            GROUP BY user_id, full_name
+            ORDER BY total DESC
+            LIMIT 3
+            """,
+            (class_id, since),
+        )
+    else:
+        cur.execute(
+            """
+            SELECT user_id, full_name, SUM(xp) as total
+            FROM xp_log
+            WHERE class_id=? AND DATE(created_at) >= ?
+            GROUP BY user_id
+            ORDER BY total DESC
+            LIMIT 3
+            """,
+            (class_id, since),
+        )
+
     rows = cur.fetchall()
     conn.close()
     return rows
@@ -282,9 +347,22 @@ def mark_weekly_run_if_new(class_id: int, week_start: str) -> bool:
     conn = get_conn()
     cur = conn.cursor()
     try:
-        cur.execute("INSERT INTO weekly_runs (class_id, week_start) VALUES (?, ?)", (class_id, week_start))
-        conn.commit()
-        return True
+        if _is_psycopg_conn(conn):
+            cur.execute(
+                """
+                INSERT INTO weekly_runs (class_id, week_start)
+                VALUES (%s, %s)
+                ON CONFLICT (class_id, week_start) DO NOTHING
+                """,
+                (class_id, week_start),
+            )
+            conn.commit()
+            # psycopg: rowcount = 1 bo‘lsa insert bo‘lgan
+            return cur.rowcount == 1
+        else:
+            cur.execute("INSERT INTO weekly_runs (class_id, week_start) VALUES (?, ?)", (class_id, week_start))
+            conn.commit()
+            return True
     except Exception:
         return False
     finally:
