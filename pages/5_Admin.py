@@ -1,5 +1,10 @@
 import streamlit as st
 import pandas as pd
+from core.db import init_db
+init_db()
+
+from core.bot_admin_repo_db import ensure_bot_db
+ensure_bot_db()
 
 from core.admin_repo_db import (
     list_users_with_metrics,
