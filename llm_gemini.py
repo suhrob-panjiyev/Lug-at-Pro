@@ -14,16 +14,16 @@ def generate_grammar_handout(topic: str, level: str, minutes: int, language: str
 
     genai.configure(api_key=api_key)
 
-    model = genai.GenerativeModel("models/gemini-1.5-flash-latest")
+    model = genai.GenerativeModel("models/gemini-2.5-flash")
 
     prompt = f"""
 Siz professional English grammar ustozisiz.
 Til: {language}
 Daraja: {level}
 Dars vaqti: {minutes} minut.
-Faqat Markdown format.
 Mavzu: {topic}
-To‘liq handout yarating.
+Professional grammar handout yarating.
+Markdown formatda yozing.
 """
 
     response = model.generate_content(prompt)
