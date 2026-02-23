@@ -137,7 +137,7 @@ st.markdown(
       <span class="pill">✅ CSV dataset</span>
       <span class="pill">✅ Suggestions</span>
       <span class="pill">✅ Student tests</span>
-      <span class="pill">🔒 Teacher AI (Premium)</span>
+      <span class="pill">✅ Teacher AI (Premium)</span>
     </div>
     """,
     unsafe_allow_html=True

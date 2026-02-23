@@ -82,6 +82,7 @@ def render_hero():
             <span class="pill">✅ Tavsiya</span>
             <span class="pill">✅ 2 xil test</span>
             <span class="pill">✅ Statistika</span>
+            <span class="pill">✅ Levels</span>
           </div>
         </div>
         """,
