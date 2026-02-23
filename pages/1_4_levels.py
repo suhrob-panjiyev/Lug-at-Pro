@@ -38,21 +38,29 @@ def predict_batch(words_norm: list[str]) -> list[str]:
     return model.predict(words_norm).tolist()
 
 # -------------------------
-# 1) CSV + user so'zlarini jamlaymiz (unique)
+# 1) Source tanlash (tepada)
 # -------------------------
-all_map = {}
-for k, v in st.session_state.base_map.items():
-    all_map[k] = v["en"]
-for k, v in st.session_state.user_map.items():
-    all_map[k] = v["en"]
+source = st.selectbox("Qaysi bazadan?", ["Hammasi", "Faqat CSV", "Faqat user"], index=0)
 
-keys = list(all_map.keys())
-words = [all_map[k] for k in keys]
+def pick_words_map(src: str) -> dict:
+    if src == "Faqat CSV":
+        return {k: v["en"] for k, v in st.session_state.base_map.items()}
+    if src == "Faqat user":
+        return {k: v["en"] for k, v in st.session_state.user_map.items()}
+    # Hammasi
+    m = {k: v["en"] for k, v in st.session_state.base_map.items()}
+    for k, v in st.session_state.user_map.items():
+        m[k] = v["en"]
+    return m
+
+picked_map = pick_words_map(source)
+
+keys = list(picked_map.keys())
+words = [picked_map[k] for k in keys]
 words_norm = [norm_en(w) for w in words]
 
-levels = predict_batch(words_norm)
+levels = predict_batch(words_norm) if words_norm else []
 df = pd.DataFrame({"key": keys, "English": words, "Level": levels})
-
 # -------------------------
 # 2) Summary (A1..C2 count)
 # -------------------------
@@ -69,15 +77,16 @@ st.divider()
 left, right = st.columns([1.2, 1])
 with left:
     pick_level = st.selectbox("Darajani tanlang:", LEVELS, index=2)  # B1
-with right:
-    source = st.selectbox("Qaysi bazadan?", ["Hammasi", "Faqat CSV", "Faqat user"], index=0)
+# =================================================================================================================================    
+# with right:
+#     source = st.selectbox("Qaysi bazadan?", ["Hammasi", "Faqat CSV", "Faqat user"], index=0)
 
 dff = df[df["Level"] == pick_level].copy()
 
-if source == "Faqat CSV":
-    dff = dff[dff["key"].isin(st.session_state.base_map.keys())]
-elif source == "Faqat user":
-    dff = dff[dff["key"].isin(st.session_state.user_map.keys())]
+# if source == "Faqat CSV":
+#     dff = dff[dff["key"].isin(st.session_state.base_map.keys())]
+# elif source == "Faqat user":
+#     dff = dff[dff["key"].isin(st.session_state.user_map.keys())]
 
 total = len(dff)
 st.write(f"**{pick_level}** darajadagi so‘zlar: **{total}** ta")

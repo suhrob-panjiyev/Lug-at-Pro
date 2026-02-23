@@ -145,6 +145,12 @@ elif st.session_state.quiz_page == "run":
     if st.session_state.current_q_id != q_id or st.session_state.current_q is None:
         st.session_state.current_q_id = q_id
         current_key = keys[idx]
+        if current_key not in source_map:
+            # bu key eski quiz_keys dan qolib ketgan bo'lishi mumkin
+            st.warning(f"⚠️ Topilmadi (skip): {current_key}")
+            st.session_state.quiz_index += 1
+            st.rerun()
+
         st.session_state.current_q = build_question_from_map(source_map, current_key)
 
     q = st.session_state.current_q

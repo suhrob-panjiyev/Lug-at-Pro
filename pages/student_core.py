@@ -93,7 +93,17 @@ def english_list_from_map(map_: dict):
 def build_question_from_map(map_: dict, en_key: str):
     return _build_question_from_map(map_, en_key)
 
-def start_quiz(mode: str, keys: List[str], csv_test_id: Optional[int] = None):
+def start_quiz(mode: str, keys: List[str], csv_test_id: Optional[int] = None, source_map: Optional[dict] = None):
+    # Agar source_map berilgan bo'lsa, keys ni mapga moslab tozalaymiz
+    if source_map is not None:
+        keys = [k for k in keys if k in source_map]
+
+    # Bo'sh bo'lib qolsa — testni boshlamaymiz
+    if not keys:
+        st.warning("Tanlangan bazada test uchun so‘z topilmadi.")
+        st.session_state.quiz_page = "menu"
+        return
+
     return _start_quiz_state(st.session_state, mode, keys, csv_test_id=csv_test_id)
 
 def reset_quiz_to_menu():
