@@ -5,7 +5,15 @@ from pages.student_core import require_login
 # LLM providerlar
 from llm_openai import generate_grammar_handout as openai_handout
 from llm_gemini import generate_grammar_handout as gemini_handout
+from io import BytesIO
+import re
 
+from docx import Document
+from docx.shared import Pt
+
+from reportlab.lib.pagesizes import A4
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Preformatted
+from reportlab.lib.styles import getSampleStyleSheet
 require_login()
 
 st.set_page_config(page_title="Teacher", page_icon="👨‍🏫", layout="wide")
@@ -34,6 +42,104 @@ with st.sidebar:
         st.switch_page("pages/3_About.py")
 
 st.title("👨‍🏫 Teacher — Grammar Material Generator")
+
+def md_to_docx_bytes(md: str) -> bytes:
+    doc = Document()
+    style = doc.styles["Normal"]
+    style.font.name = "Calibri"
+    style.font.size = Pt(11)
+
+    lines = md.splitlines()
+    in_code = False
+
+    for line in lines:
+        if line.strip().startswith("```"):
+            in_code = not in_code
+            continue
+
+        if in_code:
+            # code block -> oddiy paragraf (monospace qilib ham qilsa bo‘ladi)
+            p = doc.add_paragraph(line)
+            p.runs[0].font.name = "Consolas"
+            p.runs[0].font.size = Pt(10)
+            continue
+
+        s = line.rstrip()
+
+        if not s.strip():
+            doc.add_paragraph("")
+            continue
+
+        # Headings
+        if s.startswith("# "):
+            doc.add_heading(s[2:].strip(), level=1); continue
+        if s.startswith("## "):
+            doc.add_heading(s[3:].strip(), level=2); continue
+        if s.startswith("### "):
+            doc.add_heading(s[4:].strip(), level=3); continue
+
+        # Bullets
+        if s.lstrip().startswith(("- ", "* ")):
+            doc.add_paragraph(s.lstrip()[2:].strip(), style="List Bullet")
+            continue
+
+        # Numbered list (oddiy)
+        if re.match(r"^\d+\)\s+", s.strip()) or re.match(r"^\d+\.\s+", s.strip()):
+            # Word numberingni chuqur sozlamasdan, oddiy paragraf qilib ketamiz
+            doc.add_paragraph(s.strip())
+            continue
+
+        # Default paragraph
+        doc.add_paragraph(s)
+
+    buf = BytesIO()
+    doc.save(buf)
+    return buf.getvalue()
+
+
+def md_to_pdf_bytes(md: str, title: str = "Handout") -> bytes:
+    buf = BytesIO()
+    doc = SimpleDocTemplate(buf, pagesize=A4, title=title)
+    styles = getSampleStyleSheet()
+    story = []
+
+    lines = md.splitlines()
+    in_code = False
+
+    for line in lines:
+        if line.strip().startswith("```"):
+            in_code = not in_code
+            continue
+
+        if not line.strip():
+            story.append(Spacer(1, 8))
+            continue
+
+        if in_code:
+            story.append(Preformatted(line, styles["Code"]))
+            continue
+
+        s = line.rstrip()
+
+        # Headings
+        if s.startswith("# "):
+            story.append(Paragraph(s[2:].strip(), styles["Heading1"])); continue
+        if s.startswith("## "):
+            story.append(Paragraph(s[3:].strip(), styles["Heading2"])); continue
+        if s.startswith("### "):
+            story.append(Paragraph(s[4:].strip(), styles["Heading3"])); continue
+
+        # Bullet
+        if s.lstrip().startswith(("- ", "* ")):
+            text = s.lstrip()[2:].strip()
+            story.append(Paragraph("• " + text, styles["BodyText"]))
+            continue
+
+        # Normal
+        story.append(Paragraph(s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;"), styles["BodyText"]))
+
+    doc.build(story)
+    return buf.getvalue()
 
 # ---------- State ----------
 if "teacher_out_md" not in st.session_state:
@@ -84,6 +190,27 @@ with right:
             mime="text/markdown",
             use_container_width=True,
         )
+        if st.session_state.teacher_out_md:
+            md = st.session_state.teacher_out_md
+            safe_name = (topic.strip().replace(" ", "_") or "grammar")
+
+            colA, colB = st.columns(2)
+            with colA:
+                st.download_button(
+                    "⬇️ Word (.docx)",
+                    data=md_to_docx_bytes(md),
+                    file_name=f"{safe_name}.docx",
+                    mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                    use_container_width=True,
+                )
+            with colB:
+                st.download_button(
+                    "⬇️ PDF (.pdf)",
+                    data=md_to_pdf_bytes(md, title=safe_name),
+                    file_name=f"{safe_name}.pdf",
+                    mime="application/pdf",
+                    use_container_width=True,
+                )
     else:
         st.info("Hali material yo‘q. Chap tomonda sozlamalarni kiriting va **Material yaratish** ni bosing.")
 

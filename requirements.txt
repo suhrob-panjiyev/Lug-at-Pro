@@ -128,3 +128,4 @@ streamlit
 psycopg[binary]
 aiogram>=3.0.0
 python-dotenv
+reportlab
