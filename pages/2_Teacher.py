@@ -348,6 +348,11 @@ with st.sidebar:
         st.switch_page("pages/2_Teacher.py")
     if st.button("👤 Sayt haqida", use_container_width=True):
         st.switch_page("pages/3_About.py")
+col_back, col_space = st.columns([1, 6])
+
+with col_back:
+    if st.button("⬅ Orqaga", use_container_width=True, key="teacher_back_home"):
+        st.switch_page("app.py")
 
 st.title("👨‍🏫 Teacher — Grammar Material Generator")
 
