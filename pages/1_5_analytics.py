@@ -80,13 +80,13 @@ st.divider()
 # ==========================================================
 # 1) DONUT: Manual vs CSV accuracy
 # ==========================================================
-st.markdown("#### 1) Umumiy aniqlik — donut ko‘rinish")
+st.markdown("#### 1) Umumiy aniqlik")
 
 colA, colB = st.columns([1.2, 1])
 
 with colA:
     values = [float(m_pct), float(csv_pct)]
-    labels = ["Manual", "CSV"]
+    labels = ["Qo'shilgan so'zlar", "Bazadagi so'zlar"]
 
     # ✅ NaN/None bo'lsa 0 qilamiz (extra safety)
     clean_values = []
@@ -100,11 +100,11 @@ with colA:
     values = clean_values
 
     fig, ax = plt.subplots(figsize=(5.2, 3.0))
-    ax.set_title("Aniqlik (%) — Manual vs CSV")
+    ax.set_title("Aniqlik (%) — Qo'shiilgan so'zlar vs Bazadagi so'zlar")
 
     # ✅ Agar hali umuman natija bo'lmasa (ikkalasi 0 bo'lsa), pie chizmaymiz
     if sum(values) <= 0:
-        st.info("Donut grafik uchun hozircha ma'lumot yetarli emas. Avval bir nechta test ishlang 🙂")
+        st.info("'Qushilgan so'zlar' grafik uchun hozircha ma'lumot yetarli emas. Avval bir nechta test ishlang 🙂")
     else:
         ax.pie(
             values,
@@ -128,7 +128,7 @@ with colB:
     st.markdown(
         """
         **Bu nimani beradi?**  
-        - Manual va CSV natijani ko‘z bilan tez solishtirasiz.  
+        - Qushilgan so'zlar va Bazadagi so'zlar natijani ko‘z bilan tez solishtirasiz.  
         - O‘rtacha % markazda turadi.
         """
     )
@@ -138,7 +138,7 @@ st.divider()
 # ==========================================================
 # 2) SPARKLINE TREND: last N attempts
 # ==========================================================
-st.markdown("#### 2) So‘nggi urinishlar trendi — sparkline (zamonaviy, kichik)")
+st.markdown("#### 2) So‘nggi urinishlar trendi")
 
 N = st.slider("Oxirgi nechta urinish?", 10, 120, 40, step=10)
 
@@ -175,14 +175,14 @@ else:
         if d_kind.empty:
             st.info("Manual history yo‘q.")
         else:
-            st.pyplot(spark(d_kind, "Manual — oxirgi urinishlar"), use_container_width=True)
+            st.pyplot(spark(d_kind, "Qo'shilgan so'zlar — oxirgi urinishlar"), use_container_width=True)
 
     with sp2:
         d_kind = df_all[df_all["kind"] == "CSV"].copy()
         if d_kind.empty:
             st.info("CSV history yo‘q.")
         else:
-            st.pyplot(spark(d_kind, "CSV — oxirgi urinishlar"), use_container_width=True)
+            st.pyplot(spark(d_kind, "Bazadagi so'zlar — oxirgi urinishlar"), use_container_width=True)
 
 st.divider()
 
