@@ -384,7 +384,7 @@ with tab_gen:
 
         save_to_library = st.checkbox("✅ Materialni saqlab qo‘yish (kutubxonaga)", value=True)
 
-        c1, c2, c3 = st.columns(2)
+        c1, c2, = st.columns(2)
         with c1:
             generate_clicked = st.button("✨ Material yaratish", type="primary", use_container_width=True)
         with c2:
