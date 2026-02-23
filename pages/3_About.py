@@ -28,7 +28,7 @@ st.markdown(
 Lug‘at Pro — ingliz tilidagi so‘zlarni samarali yodlash va test qilishni osonlashtirish uchun yaratilgan loyiha. Platforma foydalanuvchilarga lug‘at qo‘shish, darajalar bo‘yicha mashq qilish va natijalarni kuzatish imkonini beradi.
 
 Maqsad — o‘quvchilar va o‘quv markazlari uchun qulay, aqlli va rivojlantiriladigan ta’lim tizimini yaratish.
-
+Yaratuvchi: Suhrob Panjiyev
 ### 📌 Kontaktlar
 """
 )
