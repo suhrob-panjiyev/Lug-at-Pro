@@ -2,39 +2,47 @@ from __future__ import annotations
 
 import json
 import re
-from collections.abc import Iterable
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
 from bot.storage.db import get_conn
+
+TZ = ZoneInfo("Asia/Samarkand")
+
+
 def _is_psycopg_conn(conn) -> bool:
     return conn.__class__.__module__.startswith("psycopg")
-TZ = ZoneInfo("Asia/Samarkand")
 
 
 # =========================
 # Classes / Members
 # =========================
 
-
 def get_class_by_group(group_id: int):
     conn = get_conn()
     cur = conn.cursor()
-    cur.execute(
-        "SELECT id, name, group_id, teacher_id FROM classes WHERE group_id=%s ORDER BY id DESC LIMIT 1",
-        (group_id,),
+
+    sql = (
+        "SELECT id, name, group_id, teacher_id FROM classes WHERE group_id=%s ORDER BY id DESC LIMIT 1"
+        if _is_psycopg_conn(conn)
+        else
+        "SELECT id, name, group_id, teacher_id FROM classes WHERE group_id=? ORDER BY id DESC LIMIT 1"
     )
+
+    cur.execute(sql, (group_id,))
     row = cur.fetchone()
     conn.close()
-    return row  # (id, name, group_id, teacher_id) or None
+    return row
 
 
 def get_group_id_by_class(class_id: int) -> int | None:
     conn = get_conn()
     cur = conn.cursor()
+
     sql = "SELECT group_id FROM classes WHERE id=%s" if _is_psycopg_conn(conn) else "SELECT group_id FROM classes WHERE id=?"
     cur.execute(sql, (class_id,))
     row = cur.fetchone()
+
     conn.close()
     return int(row[0]) if row else None
 
@@ -68,13 +76,12 @@ def list_classes():
     cur.execute("SELECT id, name, group_id FROM classes")
     rows = cur.fetchall()
     conn.close()
-    return rows  # [(class_id, name, group_id), ...]
+    return rows
 
 
 # =========================
 # Assignments
 # =========================
-
 
 def _parse_deadline_hhmm(deadline_hhmm: str | None) -> tuple[int, int] | None:
     if not deadline_hhmm:
@@ -145,19 +152,29 @@ def create_assignment(class_id: int, n_questions: int, deadline_hhmm: str | None
 def get_active_assignment(class_id: int):
     conn = get_conn()
     cur = conn.cursor()
-    cur.execute(
-        "SELECT id, n_questions, deadline_hhmm FROM assignments WHERE class_id=%s AND is_active=1 ORDER BY id DESC LIMIT 1",
-        (class_id,),
+
+    sql = (
+        "SELECT id, n_questions, deadline_hhmm FROM assignments WHERE class_id=%s AND is_active=1 ORDER BY id DESC LIMIT 1"
+        if _is_psycopg_conn(conn)
+        else
+        "SELECT id, n_questions, deadline_hhmm FROM assignments WHERE class_id=? AND is_active=1 ORDER BY id DESC LIMIT 1"
     )
+
+    cur.execute(sql, (class_id,))
     row = cur.fetchone()
     conn.close()
-    return row  # (id, n_questions, deadline_hhmm) or None
+    return row
 
 
 def set_assignment_questions(assignment_id: int, questions_payload: list) -> None:
     conn = get_conn()
     cur = conn.cursor()
-    sql = "UPDATE assignments SET questions_json=%s WHERE id=%s" if _is_psycopg_conn(conn) else "UPDATE assignments SET questions_json=? WHERE id=?"
+    sql = (
+        "UPDATE assignments SET questions_json=%s WHERE id=%s"
+        if _is_psycopg_conn(conn)
+        else
+        "UPDATE assignments SET questions_json=? WHERE id=?"
+    )
     cur.execute(sql, (json.dumps(questions_payload, ensure_ascii=False), assignment_id))
     conn.commit()
     conn.close()
@@ -166,10 +183,16 @@ def set_assignment_questions(assignment_id: int, questions_payload: list) -> Non
 def get_assignment_questions(assignment_id: int):
     conn = get_conn()
     cur = conn.cursor()
-    sql = "SELECT questions_json FROM assignments WHERE id=%s AND is_active=1" if _is_psycopg_conn(conn) else "SELECT questions_json FROM assignments WHERE id=? AND is_active=1"
+    sql = (
+        "SELECT questions_json FROM assignments WHERE id=%s AND is_active=1"
+        if _is_psycopg_conn(conn)
+        else
+        "SELECT questions_json FROM assignments WHERE id=? AND is_active=1"
+    )
     cur.execute(sql, (assignment_id,))
     row = cur.fetchone()
     conn.close()
+
     if not row or not row[0]:
         return None
     try:
@@ -179,9 +202,11 @@ def get_assignment_questions(assignment_id: int):
 
 
 def _ensure_deadline_at(assignment_id: int) -> None:
-    """If deadline_at is empty but deadline_hhmm exists, compute deadline_at from created_at date."""
+    """If deadline_at is empty but deadline_hhmm exists, compute deadline_at from created_at date (SQLite side)."""
     conn = get_conn()
     cur = conn.cursor()
+
+    # Bu helper asosan sqlite uchun kerak, postgresda deadline_at odatda bor bo‘ladi
     try:
         cur.execute("SELECT created_at, deadline_hhmm, deadline_at FROM assignments WHERE id=?", (assignment_id,))
     except Exception:
@@ -204,7 +229,6 @@ def _ensure_deadline_at(assignment_id: int) -> None:
         return
     hh, mm = hhmm
 
-    # sqlite CURRENT_TIMESTAMP: "YYYY-MM-DD HH:MM:SS"
     date_part = str(created_at).split(" ")[0].split("T")[0]
     try:
         y, mo, d = map(int, date_part.split("-"))
@@ -227,8 +251,15 @@ def is_assignment_late(assignment_id: int) -> bool:
 
     conn = get_conn()
     cur = conn.cursor()
+
+    sql = (
+        "SELECT deadline_at FROM assignments WHERE id=%s AND is_active=1"
+        if _is_psycopg_conn(conn)
+        else
+        "SELECT deadline_at FROM assignments WHERE id=? AND is_active=1"
+    )
     try:
-        cur.execute("SELECT deadline_at FROM assignments WHERE id=? AND is_active=1", (assignment_id,))
+        cur.execute(sql, (assignment_id,))
     except Exception:
         conn.close()
         return False
@@ -249,7 +280,6 @@ def is_assignment_late(assignment_id: int) -> bool:
 # =========================
 # Attempts
 # =========================
-
 
 def save_attempt(
     assignment_id: int,
@@ -302,7 +332,6 @@ def save_attempt(
 # Weekly top helpers
 # =========================
 
-
 def week_start_date(dt: datetime) -> str:
     monday = dt - timedelta(days=dt.weekday())
     return monday.strftime("%Y-%m-%d")
@@ -331,7 +360,7 @@ def weekly_top3(class_id: int, days: int = 7):
             SELECT user_id, full_name, SUM(xp) as total
             FROM xp_log
             WHERE class_id=? AND DATE(created_at) >= ?
-            GROUP BY user_id
+            GROUP BY user_id, full_name
             ORDER BY total DESC
             LIMIT 3
             """,
@@ -357,7 +386,6 @@ def mark_weekly_run_if_new(class_id: int, week_start: str) -> bool:
                 (class_id, week_start),
             )
             conn.commit()
-            # psycopg: rowcount = 1 bo‘lsa insert bo‘lgan
             return cur.rowcount == 1
         else:
             cur.execute("INSERT INTO weekly_runs (class_id, week_start) VALUES (?, ?)", (class_id, week_start))
