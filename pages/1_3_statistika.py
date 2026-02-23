@@ -27,12 +27,12 @@ with colB:
 
 s1, s2 = st.columns(2)
 with s1:
-    if st.button("🧑‍💻 Mening so‘zlarim", use_container_width=True,
+    if st.button("🧑‍💻 Mening so‘zlarim statistikasi", use_container_width=True,
                  type="primary" if st.session_state.stats_view == "manual" else "secondary"):
         st.session_state.stats_view = "manual"
         st.rerun()
 with s2:
-    if st.button("📚 CSV testlar", use_container_width=True,
+    if st.button("📚 Baza testlari statistikasi", use_container_width=True,
                  type="primary" if st.session_state.stats_view == "csv" else "secondary"):
         st.session_state.stats_view = "csv"
         st.rerun()
@@ -55,7 +55,7 @@ if st.session_state.stats_view == "manual":
     c4.metric("Aniqlik", f"{m_pct:.1f}%")
 
 else:
-    st.markdown("<div class='card'><b>📚 CSV testlar statistikasi</b><div class='muted'>Test-1, Test-2 ...</div></div>", unsafe_allow_html=True)
+    st.markdown("<div class='card'><b>📚 Bazadagi testlar statistikasi</b><div class='muted'>Test-1, Test-2 ...</div></div>", unsafe_allow_html=True)
 
     tests = stats_obj.get("csv", {}).get("tests", {})
     if not st.session_state.base_map:

@@ -45,7 +45,7 @@ if st.session_state.quiz_page == "menu":
 
     with c2:
         st.markdown(
-            "<div class='card'><b>📚 CSV testlar</b><div class='muted'>Bazadan bo‘lingan testlar.</div></div>",
+            "<div class='card'><b>📚 Bazadan testlar</b><div class='muted'>Bazadan tayyorlangan testlar.</div></div>",
             unsafe_allow_html=True
         )
         if st.button("Testlar ro‘yxati ➜", type="primary", use_container_width=True):

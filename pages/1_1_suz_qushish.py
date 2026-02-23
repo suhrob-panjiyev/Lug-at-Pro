@@ -179,7 +179,7 @@ if en_key and en_key in st.session_state.base_map:
 # CSV’da yo‘q bo‘lsa
 # ---------------------------
 else:
-    st.info("Bu so‘z CSV bazada yo‘q. Istasangiz avtomatik tarjima qilib saqlaysiz.")
+    st.info("Bu so‘z bazada yo‘q. Istasangiz avtomatik tarjima qilib saqlaysiz.")
 
     a, b, c = st.columns([1.2, 1.2, 1.2])
     with a:
