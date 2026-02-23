@@ -50,9 +50,25 @@ with col4:
 st.markdown(
     """
 ### 🚀 Loyihaning maqsadi
-- Lug‘at yodlashni tezlashtirish
-- O‘quv markazlar uchun qulay mini platforma
-- Keyinchalik: Teacher AI, DOCX/PDF tarqatmalar, admin panel
+- **Lug‘at yodlashni tezlashtirish**: so‘z qo‘shish, test qilish, statistika orqali muntazam takrorlash.
+- **O‘quv markazlar uchun mini platforma**: Student / Teacher / Admin bo‘limlari bilan oddiy, tez va qulay tizim.
+- **Teacher AI (tayyor)**: grammar mavzu bo‘yicha professional handout tayyorlaydi (CEFR daraja, vaqt, til bo‘yicha).
+- **DOCX / PDF tarqatmalar (tayyor)**: o‘qituvchi bir tugma bilan Word yoki PDF yuklab oladi.
+- **Saqlangan materiallar kutubxonasi (tayyor)**: tayyorlangan handout’lar saqlanadi va keyin qayta ishlatiladi (qayta generatsiya shart emas).
+- **Admin panel (rivojlanmoqda)**: foydalanuvchilar, sinflar, topshiriqlar va natijalarni nazorat qilish.
+- **Kelajakdagi reja**: Telegram bot bilan to‘liq integratsiya, sinfga yuborish, deadline, reyting, XP gamification.
+
+---
+### ✅ Hozirgi imkoniyatlar
+- Student: **so‘z qo‘shish**, **test**, **statistika**
+- Teacher: **AI material generator**, **saqlanganlar**, **PDF/DOCX export**
+- Admin: **monitoring va boshqaruv** (bosqichma-bosqich kengaytiriladi)
+
+---
+### 🎯 Maqsadli foydalanuvchilar
+- Ingliz tili o‘rganuvchilar (studentlar)
+- O‘qituvchilar (handout + kutubxona)
+- O‘quv markaz administratorlari (nazorat va analitika)
 """
 )
 
