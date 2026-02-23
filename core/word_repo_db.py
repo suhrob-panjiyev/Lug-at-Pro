@@ -21,6 +21,7 @@ def get_user_words_map(user_id: int) -> dict:
     return mp
 
 
+
 def upsert_word(user_id: int, en: str, uz_list: list[str]) -> None:
     """Berilgan en uchun uz_list ni DBda UNIQUE bilan saqlaydi."""
     conn = get_conn()
