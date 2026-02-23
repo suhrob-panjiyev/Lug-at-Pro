@@ -168,7 +168,7 @@ with colB:
         <div class="card">
           <h3>👨‍🏫 Teacher</h3>
           <p>
-            Grammar bo‘yicha tarqatma material generator (hozircha premium).
+            Grammar bo‘yicha tarqatma material olishingiz mumkin. (WOOOW)
           </p>
         </div>
         """,
