@@ -13,7 +13,14 @@ with st.sidebar:
     if st.button("👤 Sayt haqida", use_container_width=True):
         st.switch_page("pages/3_About.py")
 
-st.title("👤 Sayt haqida")
+col_back, col_title = st.columns([1, 5])
+
+with col_back:
+    if st.button("⬅ Home", use_container_width=True, key="profile_back_home"):
+        st.switch_page("app.py")
+
+with col_title:
+    st.title("👤 Sayt haqida")
 
 st.markdown(
     """
