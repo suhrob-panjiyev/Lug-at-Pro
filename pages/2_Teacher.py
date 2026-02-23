@@ -384,17 +384,11 @@ with tab_gen:
 
         save_to_library = st.checkbox("✅ Materialni saqlab qo‘yish (kutubxonaga)", value=True)
 
-        c1, c2, c3 = st.columns(3)
+        c1, c2, c3 = st.columns(2)
         with c1:
             generate_clicked = st.button("✨ Material yaratish", type="primary", use_container_width=True)
         with c2:
             clear_clicked = st.button("🧹 Tozalash", use_container_width=True)
-        with c3:
-            example_clicked = st.button("⚡ Misol", use_container_width=True)
-
-        if example_clicked:
-            st.session_state.teacher_topic = "Present Perfect vs Past Simple"
-            st.rerun()
 
         if clear_clicked:
             st.session_state.teacher_out_md = ""
