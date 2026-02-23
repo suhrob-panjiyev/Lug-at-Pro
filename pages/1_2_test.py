@@ -121,8 +121,22 @@ elif st.session_state.quiz_page == "run":
 
     if mode == "manual":
         source_map = st.session_state.user_map
+
+    elif mode == "csv":
+        source_map = st.session_state.base_map
+
+    elif mode == "level":
+        lvl_src = st.session_state.get("level_source", "Hammasi")
+
+        if lvl_src == "Faqat user":
+            source_map = st.session_state.user_map
+        elif lvl_src == "Faqat CSV":
+            source_map = st.session_state.base_map
+        else:
+            # Hammasi: ikkalasini birlashtiramiz
+            source_map = {**st.session_state.base_map, **st.session_state.user_map}
+
     else:
-        # csv ham, level ham base_map’dan foydalanadi
         source_map = st.session_state.base_map
 
     keys = st.session_state.quiz_keys

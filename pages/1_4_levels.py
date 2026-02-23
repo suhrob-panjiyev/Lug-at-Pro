@@ -120,9 +120,9 @@ if do_test:
     level_keys = level_keys[:QUESTIONS_PER_TEST] if len(level_keys) >= QUESTIONS_PER_TEST else level_keys
     
     st.session_state.current_level = pick_level
+    st.session_state.level_source = source   # ✅ YANGI: Hammasi/Faqat CSV/Faqat user
     start_quiz("level", level_keys)
     st.switch_page("pages/1_2_test.py")
-
 # -------------------------
 # 5) List section (only when requested)
 # -------------------------
