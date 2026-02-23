@@ -183,7 +183,7 @@ with colC:
         <div class="card">
           <h3>👤 Sayt haqida</h3>
           <p>
-             Lug'at Pro — so‘z yodlash, test topshirish va darajangizni kuzatish uchun zamonaviy platforma.
+             Lug'at Pro — so‘z yodlash, test topshirish va darajangizni kuzatish uchun platforma.
           </p>
         </div>
         """,
