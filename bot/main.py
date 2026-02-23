@@ -1,5 +1,5 @@
 
-###  Botni ran qilish uchun    ========== python -m bot.main ===========
+###  Botni ran qilish uchun    ==========    ===========
 
 import asyncio
 from aiogram import Bot, Dispatcher

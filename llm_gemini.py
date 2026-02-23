@@ -1,71 +1,50 @@
 import os
-import google.generativeai as genai
+import streamlit as st
+from google import genai
 
-def _get_api_key() -> str:
-    """
-    API key ni avval Streamlit secrets’dan, bo‘lmasa env’dan oladi.
-    Streamlit bo‘lmagan holatda ham ishlashi uchun try/except qildik.
-    """
-    api_key = ""
-    try:
-        import streamlit as st
-        api_key = st.secrets.get("GEMINI_API_KEY", "")
-    except Exception:
-        api_key = ""
 
-    if not api_key:
-        api_key = os.getenv("GEMINI_API_KEY", "")
+def _get_api_key():
+    return (st.secrets.get("GEMINI_API_KEY") or os.getenv("GEMINI_API_KEY") or "").strip()
 
-    return api_key.strip()
 
 def generate_grammar_handout(topic: str, level: str, minutes: int, language: str) -> str:
     api_key = _get_api_key()
     if not api_key:
-        raise RuntimeError("GEMINI_API_KEY topilmadi. secrets.toml yoki env ga qo'ying.")
+        raise RuntimeError("GEMINI_API_KEY topilmadi.")
 
-    genai.configure(api_key=api_key)
+    client = genai.Client(api_key=api_key)
 
-    # Sizda mavjud va MVP uchun ideal:
-    MODEL_PRIMARY = "models/gemini-2.0-flash"
-    MODEL_FALLBACK = "models/gemini-2.5-pro"
+    model_id = "gemini-1.5-flash"   # eng stabil model
 
-    system_prompt = f"""
+    prompt = f"""
 Siz professional English grammar ustozisiz.
-Natija: PROFESSIONAL handout (tarqatma) bo'lsin.
+Natija PROFESSIONAL handout bo'lsin.
 Til: {language}
 Daraja: {level}
 Dars vaqti: {minutes} minut
 Faqat GRAMMAR.
-Output faqat Markdown formatida.
-"""
+Output faqat Markdown.
 
-    user_prompt = f"""
 Mavzu: {topic}
 
 Struktura:
 1) Title
-2) Lesson goals (3-5)
-3) Form (affirmative/negative/question) jadval bilan
+2) Lesson goals
+3) Form table
 4) Usage rules
-5) Examples (kamida 10 ta)
-6) Common mistakes (kamida 6 ta + to‘g‘ri varianti)
-7) Practice:
-   - Fill in the blanks (8 ta)
-   - Multiple choice (6 ta)
-   - Transform sentences (6 ta)
-   - Translation EN<->UZ (6 ta)
-   - Speaking prompts (5 ta)
-8) TEACHER KEY (javoblar) — oxirida ajratib yozing
+5) 10 examples
+6) 6 common mistakes
+7) Practice
+8) Teacher key
 """
 
-    text_in = system_prompt + "\n" + user_prompt
+    response = client.models.generate_content(
+        model=model_id,
+        contents=prompt
+    )
 
-    # Avval tez/arzon model, bo'lmasa fallback
-    try:
-        model = genai.GenerativeModel(MODEL_PRIMARY)
-        response = model.generate_content(text_in)
-    except Exception:
-        model = genai.GenerativeModel(MODEL_FALLBACK)
-        response = model.generate_content(text_in)
+    text = getattr(response, "text", "")
+    if not text:
+        raise RuntimeError("Gemini javob bermadi.")
 
-    return (response.text or "").strip()
+    return text.strip()
