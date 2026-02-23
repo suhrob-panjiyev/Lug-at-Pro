@@ -152,7 +152,7 @@ with colA:
         <div class="card">
           <h3>🎓 Student</h3>
           <p>
-            So‘z qo‘shing, test ishlang, CSV testlar bilan mashq qiling.
+            So‘z qo‘shing, test ishlang, bilimingizni sinang.
             Tez va oddiy.
           </p>
         </div>
