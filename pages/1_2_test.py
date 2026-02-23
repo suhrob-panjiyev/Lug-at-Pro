@@ -10,7 +10,7 @@ from pages.student_core import (
     save_stats, require_login
 )
 from core.stats_repo_db import add_attempt, get_stats_obj
-
+import time
 require_login()
 
 st.set_page_config(page_title="Student — Test", page_icon="📝", layout="wide")
@@ -128,7 +128,13 @@ elif st.session_state.quiz_page == "run":
     keys = st.session_state.quiz_keys
     idx = st.session_state.quiz_index
     total_q = len(keys)
-
+    # feedback state
+    if "show_feedback" not in st.session_state:
+        st.session_state.show_feedback = False
+    if "feedback_msg" not in st.session_state:
+        st.session_state.feedback_msg = ""
+    if "feedback_ok" not in st.session_state:
+        st.session_state.feedback_ok = None
     if idx >= total_q:
         st.session_state.quiz_page = "result"
         st.rerun()
@@ -142,6 +148,33 @@ elif st.session_state.quiz_page == "run":
         st.session_state.current_q = build_question_from_map(source_map, current_key)
 
     q = st.session_state.current_q
+    # ---------------------------
+    # FEEDBACK SCREEN (2 sec)
+    # ---------------------------
+    if st.session_state.show_feedback:
+        if st.session_state.feedback_ok:
+            st.success(st.session_state.feedback_msg)
+        else:
+            st.error(st.session_state.feedback_msg)
+
+        st.caption("Keyingi savolga o‘tyapti...")
+
+        # 2 sekund kutamiz
+        time.sleep(2)
+
+        # keyingi savolga o'tamiz
+        st.session_state.show_feedback = False
+        st.session_state.feedback_msg = ""
+        st.session_state.feedback_ok = None
+
+        st.session_state.quiz_index += 1
+        st.session_state.current_q = None
+        st.session_state.current_q_id = None
+
+        if st.session_state.quiz_index >= total_q:
+            st.session_state.quiz_page = "result"
+
+        st.rerun()
 
     if mode == "manual":
         title = "🧑‍💻 Mening so‘zlarim"
@@ -170,12 +203,6 @@ elif st.session_state.quiz_page == "run":
         if st.button("✅ Yuborish", type="primary", use_container_width=True, disabled=(choice is None)):
             ok = (norm_uz(choice) == norm_uz(q["correct"]))
 
-            if ok:
-                st.session_state.quiz_score += 1
-                st.success("To‘g‘ri ✅")
-            else:
-                st.error(f"Noto‘g‘ri ❌  To‘g‘risi: **{q['correct']}**")
-
             st.session_state.quiz_answers.append({
                 "en": q["en"],
                 "your": choice,
@@ -183,20 +210,21 @@ elif st.session_state.quiz_page == "run":
                 "ok": ok
             })
 
-            # shu savolning tanlovini tozalaymiz
+            if ok:
+                st.session_state.quiz_score += 1
+                st.session_state.feedback_msg = "To‘g‘ri ✅"
+            else:
+                st.session_state.feedback_msg = f"Noto‘g‘ri ❌  To‘g‘risi: {q['correct']}"
+
+            st.session_state.feedback_ok = ok
+            st.session_state.show_feedback = True
+
+            # radio tanlovini tozalaymiz
             st.session_state.pop(radio_key, None)
 
-            st.session_state.quiz_index += 1
-            st.session_state.current_q = None
-            st.session_state.current_q_id = None
-
-            if st.session_state.quiz_index >= total_q:
-                st.session_state.quiz_page = "result"
-
             st.rerun()
-
-    with b:
-        st.metric("Score", f"{st.session_state.quiz_score}/{total_q}")
+    # with b:
+    #     st.metric("Score", f"{st.session_state.quiz_score}/{total_q}")
 
     with c:
         if st.button("🛑 To‘xtatish", use_container_width=True):
