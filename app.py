@@ -183,7 +183,7 @@ with colC:
         <div class="card">
           <h3>👤 Sayt haqida</h3>
           <p>
-            Loyihani kim qilgan? Kontaktlar, GitHub, Telegram va boshqalar.
+             Lug'at Pro — so‘z yodlash, test topshirish va darajangizni kuzatish uchun zamonaviy platforma.
           </p>
         </div>
         """,
