@@ -26,6 +26,33 @@ def render_sidebar(active: str = "student"):
             st.switch_page("pages/4_Profile.py")
         if st.button("🛡️ Admin", use_container_width=True):
             st.switch_page("pages/5_Admin_Login.py")
+        
+        from pathlib import Path
+        import base64
+
+        def sidebar_bottom_logo():
+            logo_path = Path("assets/ai_logo.png")
+            if not logo_path.exists():
+                return
+
+            with open(logo_path, "rb") as f:
+                data = base64.b64encode(f.read()).decode()
+
+            st.markdown(
+                f"""
+                <style>
+                .sidebar-logo {{
+                    position: fixed;
+                    bottom: 20px;
+                    left: 20px;
+                    width: 180px;
+                }}
+                </style>
+
+                <img src="data:image/png;base64,{data}" class="sidebar-logo">
+                """,
+                unsafe_allow_html=True
+            )
 
         st.divider()
         st.caption("© 2026 • Built by Suhrob")
