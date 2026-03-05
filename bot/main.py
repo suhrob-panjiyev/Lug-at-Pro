@@ -71,6 +71,8 @@ async def main():
 
     bot = Bot(_get_token())
     dp = Dispatcher()
+    from bot.handlers.common import router as common_router
+    dp.include_router(common_router)
 
     dp.include_router(teacher_router)
     dp.include_router(student_router)
