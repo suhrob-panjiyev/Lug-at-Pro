@@ -180,26 +180,48 @@ def set_assignment_questions(assignment_id: int, questions_payload: list) -> Non
     conn.close()
 
 
+import json
+from bot.storage.db import get_conn
+
 def get_assignment_questions(assignment_id: int):
     conn = get_conn()
     cur = conn.cursor()
-    sql = (
-        "SELECT questions_json FROM assignments WHERE id=%s AND is_active=1"
-        if _is_psycopg_conn(conn)
-        else
-        "SELECT questions_json FROM assignments WHERE id=? AND is_active=1"
-    )
-    cur.execute(sql, (assignment_id,))
+    cur.execute("SELECT questions_json FROM assignments WHERE id=?", (int(assignment_id),))
     row = cur.fetchone()
     conn.close()
 
-    if not row or not row[0]:
-        return None
-    try:
-        return json.loads(row[0])
-    except Exception:
-        return None
+    if not row:
+        return []
 
+    qj = row["questions_json"] if hasattr(row, "keys") else row[0]
+    if not qj:
+        return []
+
+    # ✅ 1) agar string bo'lsa JSON parse qilamiz
+    if isinstance(qj, str):
+        qj = qj.strip()
+        try:
+            qj = json.loads(qj)
+        except Exception:
+            return []
+
+    # ✅ 2) Agar dict bo'lsa, ichidan "questions" ni olamiz
+    # Siz create_assignment_web() da shunaqa saqlayapsiz:
+    # fixed = {"n_questions":..., "seed":..., "questions": []}
+    if isinstance(qj, dict):
+        qj = qj.get("questions") or []
+
+    # ✅ 3) Endi qj list bo'lishi kerak
+    if not isinstance(qj, list):
+        return []
+
+    # ✅ 4) elementlar dict bo'lishi kerak
+    out = []
+    for item in qj:
+        if isinstance(item, dict) and "en" in item and "uz" in item:
+            out.append(item)
+
+    return out
 
 def _ensure_deadline_at(assignment_id: int) -> None:
     """If deadline_at is empty but deadline_hhmm exists, compute deadline_at from created_at date (SQLite side)."""

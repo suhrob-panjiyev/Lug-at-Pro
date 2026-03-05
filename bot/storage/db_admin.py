@@ -84,7 +84,15 @@ def create_assignment_web(class_id: int, n_questions: int, deadline_hhmm: str | 
 
         # Savollar JSON — sizda web tarafda build_fixed_quiz_web bo'lsa o'shani import qiling,
         # hozircha placeholder (keyin chiroyli qilamiz)
-        fixed = {"n_questions": int(n_questions), "seed": aid, "questions": []}
+        fixed = {
+            "n_questions": int(n_questions),
+            "seed": aid,
+            "questions": [
+                {"en": "apple", "uz": "olma", "options": ["olma", "anor", "uzum", "shaftoli"]},
+                {"en": "book", "uz": "kitob", "options": ["daftar", "kitob", "qalam", "stol"]},
+                {"en": "water", "uz": "suv", "options": ["suv", "non", "go'sht", "choy"]},
+            ]
+        }
         cur.execute(
             "UPDATE assignments SET questions_json=%s WHERE id=%s" if _is_postgres() else "UPDATE assignments SET questions_json=? WHERE id=?",
             (json.dumps(fixed, ensure_ascii=False), aid),

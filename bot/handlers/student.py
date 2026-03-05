@@ -100,6 +100,11 @@ async def start_router(message: Message):
                 "Bu topshiriq uchun test tayyorlanmagan. O‘qituvchi /give_hw ni qayta bersin."
             )
             return
+        
+        # fixed list of dict bo'lishi shart
+        if not isinstance(fixed, list) or (fixed and not isinstance(fixed[0], dict)):
+            await message.answer("Test formatida xatolik bor (questions_json). O‘qituvchi topshiriqni qayta yaratsin.")
+            return
 
         # fixed payload: [{"en":..., "uz":..., "options":[...]}]
         questions = [(q["en"], q["uz"], q.get("options") or []) for q in fixed]
