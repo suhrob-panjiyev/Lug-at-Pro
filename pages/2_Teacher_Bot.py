@@ -4,7 +4,16 @@ import pandas as pd
 import streamlit as st
 
 from pages.student_core import require_login, render_sidebar, inject_student_css
+import json
 
+def safe_json(resp):
+    """Response JSON bo'lmasa ham yiqitmaydi; xatoni tushunarli qiladi."""
+    try:
+        return resp.json(), None
+    except Exception:
+        txt = (resp.text or "")[:800]
+        return None, f"JSON emas (status={resp.status_code}). Javob (1-qismi):\n{txt}"
+    
 require_login()
 st.set_page_config(page_title="Teacher — Bot", page_icon="🤖", layout="wide")
 render_sidebar(active="teacher")
@@ -71,7 +80,15 @@ if submitted:
 st.markdown("</div>", unsafe_allow_html=True)
 
 # ---- Classes
-classes = requests.get(f"{BOT_API}/api/classes", headers=HEADERS, timeout=20).json()
+resp = requests.get(f"{BOT_API}/api/classes", headers=HEADERS, timeout=60)
+data, err = safe_json(resp)
+
+if err:
+    st.error("Bot API /api/classes JSON qaytarmadi.")
+    st.code(err)
+    st.stop()
+
+classes = data
 dfc = pd.DataFrame(classes)
 
 if dfc.empty:

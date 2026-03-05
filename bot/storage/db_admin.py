@@ -102,6 +102,37 @@ def create_assignment_web(class_id: int, n_questions: int, deadline_hhmm: str | 
     finally:
         conn.close()
 
+def list_classes_admin() -> list[dict]:
+    conn = get_conn()
+    try:
+        cur = conn.cursor()
+
+        # SQLite va Postgres uchun bir xil mantiq: subquery bilan count va sum
+        # members: user_id bo'yicha unique hisoblaymiz
+        cur.execute(
+            """
+            SELECT
+                c.id,
+                c.name,
+                c.group_id,
+                c.teacher_id,
+                c.created_at,
+
+                (SELECT COUNT(DISTINCT m.user_id) FROM members m WHERE m.class_id = c.id) AS members_count,
+                (SELECT COUNT(*) FROM assignments a WHERE a.class_id = c.id) AS assignments_count,
+                (SELECT COUNT(*) FROM attempts t WHERE t.class_id = c.id) AS attempts_count,
+                (SELECT COALESCE(SUM(t.xp), 0) FROM attempts t WHERE t.class_id = c.id) AS xp_sum
+
+            FROM classes c
+            ORDER BY c.id DESC
+            """
+        )
+
+        return _fetchall_dict(cur)
+
+    finally:
+        conn.close()        
+
 def create_class_web(name: str, group_id: int, teacher_id: int) -> int:
     conn = get_conn()
     try:

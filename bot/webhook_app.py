@@ -103,11 +103,18 @@ def api_kpis(x_api_key: str | None = Header(default=None)):
     from bot.storage.db_admin import bot_kpis
     return bot_kpis()
 
+from fastapi import Header, HTTPException
+import logging
+
 @app.get("/api/classes")
 def api_classes(x_api_key: str | None = Header(default=None)):
     check_admin(x_api_key)
-    from bot.storage.db_admin import list_classes as list_classes_admin
-    return list_classes_admin()
+    try:
+        from bot.storage.db_admin import list_classes_admin
+        return list_classes_admin()
+    except Exception as e:
+        logging.exception("api_classes failed")
+        raise HTTPException(status_code=500, detail=f"{type(e).__name__}: {e}")
 
 @app.post("/api/assignments/create")
 def api_create_assignment(payload: dict, x_api_key: str | None = Header(default=None)):
