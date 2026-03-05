@@ -1,6 +1,6 @@
 import os
 import asyncio
-from fastapi import FastAPI, Request, HTTPException
+from fastapi import FastAPI, Request, HTTPException, Header
 from aiogram import Bot, Dispatcher
 from aiogram.types import Update
 
@@ -19,9 +19,15 @@ BOT_TOKEN = os.getenv("BOT_TOKEN")
 if not BOT_TOKEN:
     raise RuntimeError("BOT_TOKEN env var is required")
 
-# ✅ Secret path: URL topib yubormaslik uchun
 WEBHOOK_SECRET = os.getenv("WEBHOOK_SECRET", "change_me")
 WEBHOOK_PATH = f"/webhook/{WEBHOOK_SECRET}"
+
+BASE_URL = os.getenv("BASE_URL")  # https://lugatpro-bot.onrender.com
+ADMIN_API_KEY = os.getenv("ADMIN_API_KEY")  # web panel himoyasi
+
+def check_admin(x_api_key: str | None):
+    if ADMIN_API_KEY and x_api_key != ADMIN_API_KEY:
+        raise HTTPException(status_code=401, detail="Unauthorized")
 
 bot = Bot(BOT_TOKEN)
 dp = Dispatcher()
@@ -63,16 +69,11 @@ async def weekly_job(bot: Bot):
 @app.on_event("startup")
 async def on_startup():
     init_db()
-
-    # ✅ background tasklar (polling o‘rniga)
     asyncio.create_task(announcer_loop(bot, interval_sec=10))
     asyncio.create_task(weekly_job(bot))
 
-    # ✅ Deploydan keyin Render sizga public URL beradi
-    base_url = os.getenv("BASE_URL")
-    if base_url:
-        # Telegram webhookni avtomatik qo'yamiz
-        await bot.set_webhook(url=base_url.rstrip("/") + WEBHOOK_PATH)
+    if BASE_URL:
+        await bot.set_webhook(url=BASE_URL.rstrip("/") + WEBHOOK_PATH)
 
 
 @app.post(WEBHOOK_PATH)
@@ -91,20 +92,32 @@ async def telegram_webhook(req: Request):
 async def health():
     return {"status": "ok"}
 
-@app.get("/api/classes")
-async def api_classes():
-    classes = list_classes()
-    return [{"class_id": cid, "name": name, "group_id": gid} for cid, name, gid in classes]
 
+# -------------------------
+# ✅ WEB PANEL API
+# -------------------------
 
 @app.get("/api/bot/kpis")
-async def api_bot_kpis():
-    # Hozircha soddalashtirdik: raqamlarni classes listidan hisoblaymiz
-    classes = list_classes()
-    return {
-        "classes": len(classes),
-        "students": 0,
-        "assignments": 0,
-        "attempts": 0,
-        "avg_pct": 0.0,
-    }
+def api_kpis(x_api_key: str | None = Header(default=None)):
+    check_admin(x_api_key)
+    from bot.storage.db_admin import bot_kpis
+    return bot_kpis()
+
+@app.get("/api/classes")
+def api_classes(x_api_key: str | None = Header(default=None)):
+    check_admin(x_api_key)
+    from bot.storage.db_admin import list_classes as list_classes_admin
+    return list_classes_admin()
+
+@app.post("/api/assignments/create")
+def api_create_assignment(payload: dict, x_api_key: str | None = Header(default=None)):
+    check_admin(x_api_key)
+    from bot.storage.db_admin import create_assignment_web
+
+    class_id = int(payload["class_id"])
+    n_questions = int(payload["n_questions"])
+    deadline_hhmm = payload.get("deadline_hhmm")
+    deactivate_prev = bool(payload.get("deactivate_prev", True))
+
+    aid = create_assignment_web(class_id, n_questions, deadline_hhmm, deactivate_prev=deactivate_prev)
+    return {"ok": True, "assignment_id": aid}
