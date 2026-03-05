@@ -23,62 +23,30 @@ def bot_kpis() -> dict:
     try:
         cur = conn.cursor()
 
-        cur.execute("SELECT COUNT(*) AS n FROM classes")
-        classes_n = cur.fetchone()[0] if not hasattr(cur.fetchone(), "__getitem__") else cur.fetchone()["n"]
+        cur.execute("SELECT COUNT(*) FROM classes")
+        classes_n = cur.fetchone()[0] or 0
 
-        # sqlite Row bilan 2 marta fetch bo'lib ketmasin:
-        cur.execute("SELECT COUNT(*) AS n FROM classes")
-        row = cur.fetchone()
-        classes_n = row["n"] if hasattr(row, "keys") else row[0]
+        cur.execute("SELECT COUNT(DISTINCT user_id) FROM members")
+        students_n = cur.fetchone()[0] or 0
 
-        cur.execute("SELECT COUNT(DISTINCT user_id) AS n FROM members")
-        row = cur.fetchone()
-        students_n = row["n"] if hasattr(row, "keys") else row[0]
+        cur.execute("SELECT COUNT(*) FROM assignments")
+        assignments_n = cur.fetchone()[0] or 0
 
-        cur.execute("SELECT COUNT(*) AS n FROM assignments")
-        row = cur.fetchone()
-        assignments_n = row["n"] if hasattr(row, "keys") else row[0]
+        cur.execute("SELECT COUNT(*) FROM attempts")
+        attempts_n = cur.fetchone()[0] or 0
 
-        cur.execute("SELECT COUNT(*) AS n FROM attempts")
-        row = cur.fetchone()
-        attempts_n = row["n"] if hasattr(row, "keys") else row[0]
-
-        cur.execute("SELECT AVG(pct) AS v FROM attempts")
-        row = cur.fetchone()
-        avg_pct = (row["v"] if hasattr(row, "keys") else row[0]) or 0.0
+        cur.execute("SELECT AVG(pct) FROM attempts")
+        avg_pct = cur.fetchone()[0] or 0.0
 
         return {
-            "classes": int(classes_n or 0),
-            "students": int(students_n or 0),
-            "assignments": int(assignments_n or 0),
-            "attempts": int(attempts_n or 0),
-            "avg_pct": float(avg_pct or 0.0),
+            "classes": int(classes_n),
+            "students": int(students_n),
+            "assignments": int(assignments_n),
+            "attempts": int(attempts_n),
+            "avg_pct": float(avg_pct),
         }
     except Exception:
         return {"classes": 0, "students": 0, "assignments": 0, "attempts": 0, "avg_pct": 0.0}
-    finally:
-        conn.close()
-
-def list_classes() -> list[dict]:
-    q = """
-    SELECT
-        c.id,
-        c.name,
-        c.group_id,
-        c.teacher_id,
-        c.created_at,
-        (SELECT COUNT(*) FROM members m WHERE m.class_id = c.id) AS members_count,
-        (SELECT COUNT(*) FROM assignments a WHERE a.class_id = c.id) AS assignments_count,
-        (SELECT COUNT(*) FROM attempts t WHERE t.class_id = c.id) AS attempts_count,
-        (SELECT COALESCE(SUM(xp),0) FROM xp_log x WHERE x.class_id = c.id) AS xp_sum
-    FROM classes c
-    ORDER BY c.id DESC
-    """
-    conn = get_conn()
-    try:
-        cur = conn.cursor()
-        cur.execute(q)
-        return _fetchall_dict(cur)
     finally:
         conn.close()
 
@@ -131,5 +99,35 @@ def create_assignment_web(class_id: int, n_questions: int, deadline_hhmm: str | 
 
         conn.commit()
         return aid
+    finally:
+        conn.close()
+
+def create_class_web(name: str, group_id: int, teacher_id: int) -> int:
+    conn = get_conn()
+    try:
+        cur = conn.cursor()
+
+        if _is_postgres():
+            cur.execute(
+                """
+                INSERT INTO classes (name, group_id, teacher_id)
+                VALUES (%s, %s, %s)
+                RETURNING id
+                """,
+                (name, int(group_id), int(teacher_id)),
+            )
+            cid = int(cur.fetchone()[0])
+        else:
+            cur.execute(
+                """
+                INSERT INTO classes (name, group_id, teacher_id)
+                VALUES (?, ?, ?)
+                """,
+                (name, int(group_id), int(teacher_id)),
+            )
+            cid = int(cur.lastrowid)
+
+        conn.commit()
+        return cid
     finally:
         conn.close()

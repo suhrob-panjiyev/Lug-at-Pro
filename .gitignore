@@ -8,3 +8,7 @@ user_words.json
 __pycache__/
 .venv/
 venv/
+.env
+*.sqlite3
+data/*.db
+data/*.sqlite3

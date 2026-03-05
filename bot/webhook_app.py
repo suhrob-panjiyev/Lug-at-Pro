@@ -121,3 +121,18 @@ def api_create_assignment(payload: dict, x_api_key: str | None = Header(default=
 
     aid = create_assignment_web(class_id, n_questions, deadline_hhmm, deactivate_prev=deactivate_prev)
     return {"ok": True, "assignment_id": aid}
+
+@app.post("/api/classes/create")
+def api_create_class(payload: dict, x_api_key: str | None = Header(default=None)):
+    check_admin(x_api_key)
+    from bot.storage.db_admin import create_class_web
+
+    name = (payload.get("name") or "").strip()
+    if not name:
+        raise HTTPException(status_code=400, detail="name is required")
+
+    group_id = int(payload["group_id"])
+    teacher_id = int(payload["teacher_id"])
+
+    cid = create_class_web(name, group_id, teacher_id)
+    return {"ok": True, "class_id": cid}

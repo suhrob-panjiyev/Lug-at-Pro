@@ -17,11 +17,17 @@ HEADERS = {"X-API-Key": ADMIN_API_KEY} if ADMIN_API_KEY else {}
 st.title("🤖 Bot orqali topshiriq")
 st.caption("Test yaratish va Telegram guruhga bot orqali yuborish.")
 
+
 # ---- KPI
 st.markdown('<div class="card">', unsafe_allow_html=True)
 st.markdown('<div class="section-title">🤖 Telegram Bot — Monitoring</div>', unsafe_allow_html=True)
 
-k = requests.get(f"{BOT_API}/api/bot/kpis", headers=HEADERS, timeout=20).json()
+k = {"classes": 0, "students": 0, "assignments": 0, "attempts": 0, "avg_pct": 0.0}
+try:
+    k = requests.get(f"{BOT_API}/api/bot/kpis", headers=HEADERS, timeout=60).json()
+except Exception:
+    st.warning("Bot server javob bermayapti (sleep/cold start bo‘lishi mumkin). KPI vaqtincha ko‘rinmaydi, lekin sahifa ishlayveradi.")
+
 c1, c2, c3, c4, c5 = st.columns(5)
 c1.metric("Classes", k.get("classes", 0))
 c2.metric("Students", k.get("students", 0))
@@ -35,6 +41,34 @@ try:
 except Exception:
     st.warning("Bot server javob bermayapti (sleep bo‘lishi mumkin). 1-2 daqiqadan keyin qayta urinib ko‘ring.")
     st.stop()
+
+# ---- Create class
+st.markdown('<div class="card">', unsafe_allow_html=True)
+st.markdown('<div class="section-title">➕ Class yaratish</div>', unsafe_allow_html=True)
+
+with st.form("create_class_form"):
+    name = st.text_input("Class nomi (masalan: IT-101)")
+    group_id = st.number_input("Telegram group_id", step=1, format="%d")
+    teacher_id = st.number_input("Teacher ID (botda admin/teacher user_id)", step=1, format="%d")
+    submitted = st.form_submit_button("Create class")
+
+if submitted:
+    try:
+        r = requests.post(
+            f"{BOT_API}/api/classes/create",
+            headers=HEADERS,
+            json={"name": name, "group_id": int(group_id), "teacher_id": int(teacher_id)},
+            timeout=60,
+        )
+        if r.status_code != 200:
+            st.error(f"Xato: {r.status_code} — {r.text}")
+        else:
+            st.success(f"Class yaratildi ✅ (id={r.json().get('class_id')})")
+            st.rerun()
+    except Exception as e:
+        st.error(f"Ulanishda xato: {e}")
+
+st.markdown("</div>", unsafe_allow_html=True)
 
 # ---- Classes
 classes = requests.get(f"{BOT_API}/api/classes", headers=HEADERS, timeout=20).json()
