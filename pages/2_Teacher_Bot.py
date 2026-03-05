@@ -55,6 +55,7 @@ st.write("")
 dfc = list_classes()
 if dfc.empty:
     st.info("Hozircha bot DB’da class yo‘q.")
+    st.info("Bu yerdan hozrcha foydalana olmaysiz, bu yer faqat localni ishlayapti. 👈🏻👈🏻👈🏻")
     st.stop()
 
 st.markdown('<div class="card">', unsafe_allow_html=True)
