@@ -130,6 +130,6 @@ aiogram>=3.0.0
 python-dotenv
 reportlab
 
-aiogram==3.7.0
-fastapi
-uvicorn
+# aiogram==3.7.0
+# fastapi
+# uvicorn
