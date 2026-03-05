@@ -154,7 +154,7 @@ with c2:
   <span class="teacher-pill">📈 Monitoring</span>
 
   <ul class="teacher-list">
-    <li>Sinf tanlab assignment yaratish</li>
+    <li>Sinf tanlab topshiriq yaratish</li>
     <li>Deadline va active holat boshqaruvi</li>
     <li>Sinflar / urinishlar statistikasi</li>
   </ul>
