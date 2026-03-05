@@ -90,3 +90,21 @@ async def telegram_webhook(req: Request):
 @app.get("/health")
 async def health():
     return {"status": "ok"}
+
+@app.get("/api/classes")
+async def api_classes():
+    classes = list_classes()
+    return [{"class_id": cid, "name": name, "group_id": gid} for cid, name, gid in classes]
+
+
+@app.get("/api/bot/kpis")
+async def api_bot_kpis():
+    # Hozircha soddalashtirdik: raqamlarni classes listidan hisoblaymiz
+    classes = list_classes()
+    return {
+        "classes": len(classes),
+        "students": 0,
+        "assignments": 0,
+        "attempts": 0,
+        "avg_pct": 0.0,
+    }
