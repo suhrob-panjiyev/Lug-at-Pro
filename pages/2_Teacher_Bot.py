@@ -89,7 +89,28 @@ if err:
     st.stop()
 
 classes = data
-dfc = pd.DataFrame(classes)
+# ---- normalize classes payload ----
+# Kutilgan format: list[dict]
+if isinstance(classes, dict):
+    # FastAPI error: {"detail": "..."} yoki wrapper: {"data": [...]}
+    if "data" in classes and isinstance(classes["data"], list):
+        classes = classes["data"]
+    else:
+        st.error("Bot API /api/classes kutilmagan format qaytardi (list emas).")
+        st.json(classes)
+        st.stop()
+
+if not isinstance(classes, list):
+    st.error("Bot API /api/classes list qaytarmadi.")
+    st.write(type(classes))
+    st.stop()
+
+# list bo‘lsa ham elementlari dict ekanini tekshiramiz
+if len(classes) > 0 and not isinstance(classes[0], dict):
+    st.error("Bot API /api/classes list ichida dict emas.")
+    st.write(type(classes[0]))
+    st.stop()
+dfc = pd.DataFrame.from_records(classes) if classes else pd.DataFrame()
 
 if dfc.empty:
     st.info("Hozircha bot DB’da class yo‘q (yoki API key noto‘g‘ri).")

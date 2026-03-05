@@ -107,10 +107,9 @@ def list_classes_admin() -> list[dict]:
     try:
         cur = conn.cursor()
 
-        # SQLite va Postgres uchun bir xil mantiq: subquery bilan count va sum
-        # members: user_id bo'yicha unique hisoblaymiz
-        cur.execute(
-            """
+        # 1) xp_sum ni hisoblashga harakat qilamiz
+        # 2) Agar attempts jadvalida xp ustuni bo'lmasa — fallback: 0
+        sql_with_xp = """
             SELECT
                 c.id,
                 c.name,
@@ -125,13 +124,34 @@ def list_classes_admin() -> list[dict]:
 
             FROM classes c
             ORDER BY c.id DESC
-            """
-        )
+        """
+
+        sql_no_xp = """
+            SELECT
+                c.id,
+                c.name,
+                c.group_id,
+                c.teacher_id,
+                c.created_at,
+
+                (SELECT COUNT(DISTINCT m.user_id) FROM members m WHERE m.class_id = c.id) AS members_count,
+                (SELECT COUNT(*) FROM assignments a WHERE a.class_id = c.id) AS assignments_count,
+                (SELECT COUNT(*) FROM attempts t WHERE t.class_id = c.id) AS attempts_count,
+                0 AS xp_sum
+
+            FROM classes c
+            ORDER BY c.id DESC
+        """
+
+        try:
+            cur.execute(sql_with_xp)
+        except Exception:
+            # xp ustuni yo'q bo'lsa shu yerga tushadi
+            cur.execute(sql_no_xp)
 
         return _fetchall_dict(cur)
-
     finally:
-        conn.close()        
+        conn.close() 
 
 def create_class_web(name: str, group_id: int, teacher_id: int) -> int:
     conn = get_conn()
