@@ -182,3 +182,23 @@ def create_class_web(name: str, group_id: int, teacher_id: int) -> int:
         return cid
     finally:
         conn.close()
+
+def get_active_assignment_by_id(aid: int) -> dict | None:
+    conn = get_conn()
+    try:
+        cur = conn.cursor()
+        cur.execute(
+            "SELECT * FROM assignments WHERE id=%s AND is_active=1" if _is_postgres()
+            else "SELECT * FROM assignments WHERE id=? AND is_active=1",
+            (int(aid),),
+        )
+        row = cur.fetchone()
+        if not row:
+            return None
+        try:
+            return dict(row)
+        except Exception:
+            cols = [d[0] for d in cur.description]
+            return {cols[i]: row[i] for i in range(len(cols))}
+    finally:
+        conn.close()

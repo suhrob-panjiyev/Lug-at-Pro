@@ -23,8 +23,6 @@ from bot.services.classroom import (
     is_assignment_late,
 )
 
-# Sertifikat servis: ikkala variantni ham qo'llab-quvvatlaymiz
-
 router = Router()
 TZ = ZoneInfo("Asia/Samarkand")
 
@@ -36,12 +34,12 @@ def get_assignment_row(assignment_id: int):
     conn = get_conn()
     cur = conn.cursor()
     cur.execute(
-        "SELECT id, class_id, n_questions FROM assignments WHERE id=? AND is_active=1",
-        (assignment_id,),
+        "SELECT id, class_id, n_questions, is_active FROM assignments WHERE id=?",
+        (int(assignment_id),),
     )
     row = cur.fetchone()
     conn.close()
-    return row  # (id, class_id, n_questions) or None
+    return row
 
 
 def get_class_name(class_id: int) -> str:
@@ -51,6 +49,7 @@ def get_class_name(class_id: int) -> str:
     row = cur.fetchone()
     conn.close()
     return (row[0] if row and row[0] else "Class")
+
 
 @router.message(F.text.startswith("/start"))
 async def start_router(message: Message):
@@ -65,14 +64,35 @@ async def start_router(message: Message):
     # homework start: hw_<assignment_id>
     # =========================
     if payload.startswith("hw_"):
-        assignment_id = int(payload.split("_")[1])
+        import bot.storage.db as _db
+        print("📌 student db =", _db.DB_PATH)
 
-        row = get_assignment_row(assignment_id)
-        if not row:
-            await message.answer("Bu topshiriq aktiv emas yoki topilmadi.")
+        try:
+            assignment_id = int(payload.split("_")[1])
+        except Exception:
+            await message.answer("❌ Link xato: assignment_id topilmadi.")
             return
 
-        _, class_id, _n_q = row
+        row = get_assignment_row(assignment_id)
+
+        # ✅ DEBUG: row nima qaytaryapti?
+        print("🧾 assignment row =", row, "| type =", type(row))
+
+        if not row:
+            await message.answer("Bu topshiriq topilmadi (DBda yo‘q).")
+            return
+
+        # sqlite Row bo'lsa dictga o'xshaydi, tuple bo'lsa index bilan
+        is_active = row["is_active"] if hasattr(row, "keys") else row[3]
+        class_id = row["class_id"] if hasattr(row, "keys") else row[1]
+        n_q = row["n_questions"] if hasattr(row, "keys") else row[2]
+
+        # ✅ DEBUG: ajratib olingan qiymatlar
+        print("🔎 parsed:", {"assignment_id": assignment_id, "class_id": class_id, "n_q": n_q, "is_active": is_active})
+
+        if int(is_active) != 1:
+            await message.answer("Bu topshiriq hozir aktiv emas (is_active=0).")
+            return
 
         fixed = get_assignment_questions(assignment_id)
         if not fixed:
@@ -101,7 +121,9 @@ async def start_router(message: Message):
         }
 
         if late:
-            await message.answer("⏰ Deadline o‘tib ketgan, lekin siz topshiriqni *late* sifatida topshirasiz.")
+            await message.answer(
+                "⏰ Deadline o‘tib ketgan, lekin siz topshiriqni *late* sifatida topshirasiz."
+            )
 
         await message.answer("📝 Topshiriq boshlandi! Javobni tanlang.")
         await send_question(message)
@@ -180,8 +202,7 @@ async def send_question(message: Message):
                 f"📊 Natija: {score}/{total} ({pct}%)" + late_txt,
             )
 
-        # ✅ NEW: Sertifikatni har topshiriqdan keyin yuborish (PRIVATE)
-
+        # ✅ (Bu yerga keyin sertifikat yuborish funksiyangizni qo‘shasiz)
 
         QUIZ.pop(message.from_user.id, None)
 
